@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4173;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
+const docsPrebuilt = Boolean(process.env.E2E_DOCS_PREBUILT);
 
 export default defineConfig({
     testDir: './e2e',
@@ -14,7 +15,9 @@ export default defineConfig({
         trace: 'on-first-retry',
     },
     webServer: {
-        command: `bun run build:docs && bun run --filter @spreadish/docs preview -- --host 127.0.0.1 --port ${PORT}`,
+        command: docsPrebuilt
+            ? `bun run --filter @spreadish/docs preview -- --host 127.0.0.1 --port ${PORT}`
+            : `bun run build:docs && bun run --filter @spreadish/docs preview -- --host 127.0.0.1 --port ${PORT}`,
         url: BASE_URL,
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,

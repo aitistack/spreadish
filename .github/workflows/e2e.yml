@@ -23,5 +23,9 @@ jobs:
             - run: bun install --frozen-lockfile
             - run: bun run e2e:install
             - run: bun run build
-            - run: bun run build:playground
+            # Build docs as its own step so failures are visible in the job log.
+            # Playwright then only starts the preview server (see playwright.config.ts).
+            - run: bun run build:docs
             - run: bun run test:e2e
+              env:
+                  E2E_DOCS_PREBUILT: '1'

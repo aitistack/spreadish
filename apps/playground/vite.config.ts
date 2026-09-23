@@ -11,6 +11,10 @@ export default defineConfig({
                 import.meta.dirname,
                 '../../packages/spreadsheet-core/src/index.ts',
             ),
+            '@spreadish/formula-engine': path.resolve(
+                import.meta.dirname,
+                '../../packages/formula-engine/src/index.ts',
+            ),
             '@spreadish/react': path.resolve(
                 import.meta.dirname,
                 '../../packages/spreadsheet-react/src/index.ts',

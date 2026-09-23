@@ -25,6 +25,7 @@ jobs:
             - run: bun run format:check
             - run: bun run lint
             - run: bun run typecheck
+            # Workspace package.json exports resolve to dist/; build before Bun tests.
+            - run: bun run build
             - run: bun run test:unit
             - run: bun run check:circular
-            - run: bun run build

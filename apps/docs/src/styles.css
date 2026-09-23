@@ -481,25 +481,37 @@ a {
     font-weight: 600;
 }
 
-.docs-steps {
+/* Steps — beat .docs-prose ol/li specificity so badges don't overlap titles */
+.docs-prose ol.docs-steps,
+ol.docs-steps {
     margin: 1.25rem 0;
-    counter-reset: docs-step;
-    list-style: none;
     padding: 0;
+    list-style: none;
+    counter-reset: docs-step;
 }
 
-.docs-step {
+.docs-prose ol.docs-steps > li.docs-step,
+ol.docs-steps > li.docs-step {
     position: relative;
-    margin: 0 0 1rem;
-    padding-left: 2.75rem;
+    margin: 0 0 1.15rem;
+    padding-left: 2.85rem;
+    list-style: none;
     counter-increment: docs-step;
 }
 
-.docs-step::before {
+.docs-prose ol.docs-steps > li.docs-step::marker,
+ol.docs-steps > li.docs-step::marker {
+    content: '';
+    font-size: 0;
+}
+
+.docs-prose ol.docs-steps > li.docs-step::before,
+ol.docs-steps > li.docs-step::before {
     content: counter(docs-step);
     position: absolute;
     left: 0;
-    top: 0;
+    top: 0.1rem;
+    z-index: 1;
     display: inline-flex;
     height: 1.75rem;
     width: 1.75rem;
@@ -511,28 +523,53 @@ a {
     font-family: var(--spreadish-font-display);
     font-size: 0.8rem;
     font-weight: 700;
+    line-height: 1;
+    pointer-events: none;
 }
 
+.docs-prose .docs-step-title,
 .docs-step-title {
-    margin: 0 0 0.25rem;
+    margin: 0 0 0.35rem;
+    padding-top: 0.2rem;
     font-family: var(--spreadish-font-display);
     font-size: 1rem;
     font-weight: 600;
+    line-height: 1.35;
+    color: var(--pg-text);
 }
 
-.docs-checklist {
+.docs-prose ol.docs-steps > li.docs-step .docs-callout-body > :first-child {
+    margin-top: 0;
+}
+
+.docs-prose ol.docs-steps > li.docs-step:last-child {
+    margin-bottom: 0;
+}
+
+/* Checklist — same specificity fight as Steps */
+.docs-prose ul.docs-checklist,
+ul.docs-checklist {
     margin: 1rem 0 1.25rem;
-    list-style: none;
     padding: 0;
+    list-style: none;
 }
 
-.docs-checklist li {
+.docs-prose ul.docs-checklist > li,
+ul.docs-checklist > li {
     position: relative;
-    margin: 0.4rem 0;
-    padding-left: 1.6rem;
+    margin: 0.45rem 0;
+    padding-left: 1.7rem;
+    list-style: none;
 }
 
-.docs-checklist li::before {
+.docs-prose ul.docs-checklist > li::marker,
+ul.docs-checklist > li::marker {
+    content: '';
+    font-size: 0;
+}
+
+.docs-prose ul.docs-checklist > li::before,
+ul.docs-checklist > li::before {
     content: '';
     position: absolute;
     left: 0;
@@ -544,7 +581,8 @@ a {
     background: var(--pg-accent-soft);
 }
 
-.docs-checklist[data-variant='dont'] li::before {
+.docs-prose ul.docs-checklist[data-variant='dont'] > li::before,
+ul.docs-checklist[data-variant='dont'] > li::before {
     border-color: #dc2626;
     background: #fef2f2;
 }

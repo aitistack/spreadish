@@ -1,0 +1,228 @@
+# Contributing
+
+Spreadish is a sparse spreadsheet engine for React applications. Contributions should preserve its deterministic command model, framework-independent core, package boundaries, and public documentation.
+
+This guide covers repository setup, implementation expectations, testing, playground updates, changesets, and pull requests.
+
+## Consumer installs versus repository development
+
+Applications consuming published Spreadish packages may use Bun, pnpm, npm, or yarn:
+
+<InstallTabs packages="@spreadish/core @spreadish/react @spreadish/sometic" />
+
+Development inside this monorepo uses **Bun only**. Do not run npm, pnpm, or yarn install commands here — they can produce conflicting lockfiles and workspace resolutions.
+
+## Repository setup
+
+```bash
+bun install
+bun run dev
+```
+
+`bun run dev` serves the docs site (`apps/docs`), including the spreadsheet at `/playground`.
+
+Before changing code, read the public guides that apply:
+
+- [Architecture](/docs/architecture)
+- [Core model](/docs/core-model)
+- [React renderer](/docs/react)
+- [Persistence and workspaces](/docs/persistence)
+- [Formulas](/docs/formulas)
+- [Import and export](/docs/import-export)
+
+The site header **Copy Prompt** control pastes a concise implementation brief for coding agents.
+
+## Repository layout
+
+```text
+packages/
+  formula-engine/       Lexer, parser, AST, evaluator, dependency analysis
+  spreadsheet-core/     Workbook model, commands, history, formulas, import/export
+  spreadsheet-react/    React renderer and browser interaction
+  spreadsheet-sometic/  Sometic persistence and workspace adapters
+  spreadsheet-utils/    Shared framework-independent helpers
+  spreadsheet-testing/  Shared test utilities
+
+apps/
+  docs/                 Public documentation site
+  playground/           Spreadsheet shell used by the docs site
+  e2e-host/             Playwright integration host
+
+.changeset/             Package release notes
+```
+
+Import packages through their public entry points. Do not reach into another package's private source.
+
+## Package boundaries
+
+```text
+@spreadish/formula-engine ─┐
+                          ├─> @spreadish/core ─> @spreadish/react
+@spreadish/utils ──────────┘                  └─> @spreadish/sometic
+```
+
+Circular package imports are forbidden. `@spreadish/testing` may depend on packages for tests only.
+
+| Package                     | Owns                                                                   | Must not                                    |
+| --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------- |
+| `@spreadish/core`           | Sparse workbook, commands, history, formulas, serialize, import/export | Import React, Sometic, Tailwind, or UI libs |
+| `@spreadish/react`          | Virtualized grid and interaction                                       | Own canonical workbook state                |
+| `@spreadish/sometic`        | Sessions, workspaces, IndexedDB adapter                                | Invent a second app-state library           |
+| `@spreadish/formula-engine` | Lexer, parser, AST, evaluator                                          | Use `eval` / `new Function`                 |
+| `@spreadish/utils`          | Pure shared helpers                                                    | Depend on React or Sometic                  |
+
+Do not add Zustand, TanStack Query, Redux, or another app state/query library for the official path.
+
+## Design edge cases before implementation
+
+Before coding a feature, list normal, empty, boundary, invalid, sparse-distant, undo/redo, persistence/reload, keyboard, and accessibility cases. Happy-path-only coverage is not enough.
+
+For a bug fix: add a failing regression test first, then fix the smallest correct behavior.
+
+## Mutation rules
+
+All domain mutations go through `workbook.execute`:
+
+```ts
+const result = workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 0,
+    value: 'Ready',
+});
+
+if (!result.applied) {
+    // No-op or rejected intent
+}
+```
+
+Do not mutate maps, order arrays, cell records, or objects returned by `getState()`. Commands must be deterministic, typed, history-aware when they change the document, and safe on boundary/repeated input.
+
+Multi-cell operations (paste, delimited import) should be one command and one undo step.
+
+## Sparse model requirements
+
+Canonical state is sparse. Do not:
+
+- Allocate a dense matrix as source of truth
+- Treat row/column index as persistent identity
+- Rewrite stable IDs because display order changed
+
+Rows and columns have stable IDs plus separate order arrays. Temporary dense data is fine at interchange boundaries (CSV plans); it must not replace the sparse model.
+
+## Testing expectations
+
+Every engine feature needs:
+
+- Unit tests with edge and invalid cases
+- Typecheck and lint coverage
+- Undo/redo tests when mutating
+- Persistence/reload tests when persisting
+- E2E coverage when user-visible
+- Regression tests for bug fixes
+
+Assert domain behavior, not private implementation details.
+
+## Required local gates
+
+```bash
+bun install
+bun run format:check
+bun run lint
+bun run typecheck
+bun run test:unit
+bun run check:circular
+bun run build
+bun run package:check
+bun run package:smoke
+bun run test:e2e
+bun run docs:build
+```
+
+Do not claim a gate passed without running it. Do not finish while a required check fails.
+
+## Playground updates
+
+Every user-visible change must keep `apps/playground` (and the docs `/playground` route) current:
+
+1. Wire the real package API
+2. Dispatch core commands for document mutations
+3. Keep workbook truth outside React component state
+4. Add or update E2E coverage
+5. Verify with `bun run dev`
+
+Do not ship controls that fake unfinished engine features. Stub or disable them until the behavior exists.
+
+## Documentation updates
+
+Update `apps/docs` whenever a contribution changes public API, install/peers, runtime behavior, commands/events, persistence, formulas, import/export, or a host workflow.
+
+Package READMEs must link to [https://spreadish.aitistack.com](https://spreadish.aitistack.com), not private maintainer materials.
+
+After docs changes:
+
+```bash
+bun run docs:build
+```
+
+## Changesets
+
+Published package behavior or API changes need a changeset:
+
+```bash
+bun run changeset
+```
+
+Example:
+
+```md
+---
+'@spreadish/core': minor
+---
+
+Add a deterministic command for importing a delimited grid as one undo step.
+```
+
+- `patch` — compatible bug fix
+- `minor` — backward-compatible capability
+- `major` — breaking public change
+
+Docs-only / test-only / internal refactors usually skip a package changeset unless distributed output changes. Do not publish packages manually.
+
+## Branches and pull requests
+
+Prefer focused branches (`feature/*`, `fix/*`, `docs/*`, `test/*`) and Conventional Commit prefixes (`feat:`, `fix:`, `docs:`, `test:`, …).
+
+A PR should explain purpose, packages touched, approach, tests, edge cases, undo/redo and persistence impact when relevant, breaking changes, UI screenshots when visible, and changeset status.
+
+Required checks and review must pass before merge.
+
+## What not to do
+
+- Use npm/pnpm/yarn inside this monorepo
+- Put React or Sometic in core
+- Add a parallel app-state library
+- Make React the workbook source of truth
+- Mutate workbook state outside commands
+- Replace sparse storage with a dense canonical matrix
+- Use index as identity
+- Evaluate formulas with `eval` / `new Function`
+- Trust imported data without validation
+- Introduce circular package dependencies
+- Disable lint/type errors to greenwash checks
+- Skip undo/redo or persistence tests when required
+- Fake unfinished playground features
+- Publish packages manually
+
+## Current release stage
+
+Foundation through Phase 10 (Release) is complete. Public packages publish via Changesets + GitHub Release + npm Trusted Publishing (`publish.yml`, `npm-production` environment). Prefer post-V1 work as explicit versioned features — not silent core scope creep. See [Roadmap](/docs/roadmap).
+
+## Next
+
+- [Architecture](/docs/architecture)
+- [Core model](/docs/core-model)
+- [Integration recipes](/docs/recipes)
+- [Roadmap](/docs/roadmap)
+- [`@spreadish/core` API](/docs/api/core)

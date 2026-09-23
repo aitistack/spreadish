@@ -1,0 +1,277 @@
+import { previewFormula } from '../assets/previews';
+
+# Formulas
+
+Spreadish parses formulas as a small deterministic language. `@spreadish/formula-engine` owns lexing, parsing, AST evaluation, function behavior, dependency extraction, and cycle analysis. `@spreadish/core` connects that engine to workbook cells and history.
+
+Formula input is never passed to `eval` or `new Function`.
+
+## Set a formula
+
+Set formulas through the same `setCellValue` command used for ordinary values:
+
+```ts
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 0,
+    value: '=1+2',
+});
+```
+
+The leading `=` identifies formula text. Core stores the original formula and writes the computed result into the cell value.
+
+```ts
+const cell = workbook.getCell(sheetId, 0, 0);
+
+console.log(cell?.formula);
+// =1+2
+
+console.log(cell?.value);
+// { kind: 'number', value: 3 }
+```
+
+Do not calculate formulas in a React component or write computed results directly. Doing so bypasses dependencies, cycle detection, history, and domain events.
+
+<SnippetPreview
+    variant="playground"
+    title="Formula bar in the playground"
+    description="The formula bar preserves source text while the selected cell displays its computed value."
+    image={previewFormula}
+    caption="Open the playground to try the same interaction live."
+/>
+
+## Cell references and ranges
+
+Formulas use A1-style references:
+
+```text
+=A1
+=A1+B1
+=SUM(A1:A10)
+=IF(B2>0, B2*2, 0)
+```
+
+Rows and columns in the public command API are zero-based, while formula references are one-based:
+
+| Command coordinate      | Formula reference |
+| ----------------------- | ----------------- |
+| `{ row: 0, column: 0 }` | `A1`              |
+| `{ row: 0, column: 1 }` | `B1`              |
+| `{ row: 9, column: 2 }` | `C10`             |
+
+Ranges are inclusive. Aggregates visit their cells in deterministic reading order.
+
+## Dependency recalculation
+
+Core recalculates formula cells after relevant workbook commands:
+
+```ts
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 0,
+    value: 10,
+});
+
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 1,
+    value: '=A1*2',
+});
+
+// B1 computes to 20.
+
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 0,
+    value: 11,
+});
+
+// B1 recomputes to 22.
+```
+
+V1 recalculation scans sparse formula cells rather than depending on mounted React cells. A formula remains correct even when its row is outside the visible viewport.
+
+## Built-in functions
+
+Function names are case-insensitive.
+
+| Function  | Purpose                        | Example                  |
+| --------- | ------------------------------ | ------------------------ |
+| `SUM`     | Sum numeric values             | `=SUM(A1:A10)`           |
+| `AVERAGE` | Average numeric values         | `=AVERAGE(B1:B5)`        |
+| `MIN`     | Smallest numeric value         | `=MIN(A1:C1)`            |
+| `MAX`     | Largest numeric value          | `=MAX(A1:C1)`            |
+| `COUNT`   | Count numeric values           | `=COUNT(A1:A20)`         |
+| `COUNTA`  | Count non-empty values         | `=COUNTA(A1:A20)`        |
+| `IF`      | Choose based on a condition    | `=IF(A1>0, "yes", "no")` |
+| `AND`     | True when all inputs are true  | `=AND(A1>0, B1>0)`       |
+| `OR`      | True when any input is true    | `=OR(A1>0, B1>0)`        |
+| `NOT`     | Invert a boolean               | `=NOT(A1=0)`             |
+| `ROUND`   | Round to a number of digits    | `=ROUND(A1, 2)`          |
+| `ABS`     | Absolute numeric value         | `=ABS(A1)`               |
+| `CONCAT`  | Join values as text            | `=CONCAT(A1, "-", B1)`   |
+| `LEFT`    | Take characters from the left  | `=LEFT(A1, 3)`           |
+| `RIGHT`   | Take characters from the right | `=RIGHT(A1, 2)`          |
+| `LEN`     | Count text characters          | `=LEN(A1)`               |
+
+The complete V1 built-in set is:
+
+```text
+SUM AVERAGE MIN MAX COUNT COUNTA IF AND OR NOT ROUND ABS CONCAT LEFT RIGHT LEN
+```
+
+## Aggregate behavior
+
+`SUM`, `AVERAGE`, `MIN`, `MAX`, `COUNT`, and `COUNTA` accept references and ranges.
+
+Numeric aggregates ignore text and booleans found inside ranges. Direct scalar arguments may be coerced according to formula rules.
+
+Important edge cases include:
+
+- `SUM()` and an empty range produce `0`
+- `MIN` and `MAX` with no numeric range values produce `0`
+- `AVERAGE` with no numeric values produces a division error
+- `COUNT` counts numbers
+- `COUNTA` counts every non-empty value, including empty strings supplied as values
+- Errors encountered through arguments propagate instead of silently becoming zero
+
+## Logical and text behavior
+
+`IF` accepts a condition, a value for the true branch, and an optional false branch:
+
+```text
+=IF(A1>=10, "ready", "waiting")
+```
+
+`AND`, `OR`, and `NOT` operate on boolean-compatible values.
+
+`ROUND` accepts an optional digit count:
+
+```text
+=ROUND(12.345, 2)
+=ROUND(1250, -2)
+```
+
+`LEFT` and `RIGHT` accept text and an optional character count. Negative lengths are invalid. `LEN` returns the JavaScript string length used by the deterministic evaluator.
+
+`CONCAT` requires at least one argument and flattens ranges in reading order.
+
+## Circular references
+
+A direct or indirect dependency cycle produces `#CIRC!`:
+
+```ts
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 0,
+    value: '=B1',
+});
+
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 1,
+    value: '=A1',
+});
+```
+
+Both cells participating in the cycle receive a circular-reference error. Unrelated formula cells can still calculate.
+
+Cycles can also involve ranges, so test more than direct two-cell references.
+
+## Unknown functions
+
+An unknown function name produces `#NAME?`:
+
+```text
+=DOES_NOT_EXIST(A1)
+```
+
+Do not silently treat unknown functions as zero or attempt to resolve them as JavaScript globals.
+
+## Other formula failures
+
+The engine represents formula failures as typed cell errors rather than throwing them through the UI. In addition to `#CIRC!` and `#NAME?`, malformed syntax, invalid references, division by zero, invalid values, and invalid numeric operations can produce corresponding error cells.
+
+Hosts should render the formatted error value and keep the original formula available for correction.
+
+## Undo, redo, and persistence
+
+A formula write is a normal workbook mutation:
+
+```ts
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 3,
+    column: 2,
+    value: '=SUM(A1:A3)',
+});
+
+workbook.undo();
+workbook.redo();
+```
+
+Undo and redo restore both formula source and computed workbook state.
+
+Serialization stores formula source. After restoration through core, formulas recalculate so dependent values reflect the restored workbook.
+
+## Formula tests to include
+
+When adding or changing formula behavior, cover:
+
+- Empty references and ranges
+- Mixed numbers, strings, booleans, and errors
+- Direct and range arguments
+- Nested function calls
+- Wrong argument counts
+- Unknown names
+- Malformed syntax
+- Self-reference
+- Multi-cell cycles
+- Cycles through ranges
+- Dependencies updated after a precedent changes
+- Undo and redo
+- Serialization and reload
+- Large sparse sheets
+- Deterministic evaluation order
+
+## Common pitfalls
+
+### Omitting the leading equals sign
+
+`'SUM(A1:A3)'` is text. `'=SUM(A1:A3)'` is a formula.
+
+### Writing the displayed result
+
+Persist the formula source through `setCellValue`. Core owns the computed `CellValue`.
+
+### Evaluating formulas in React
+
+The renderer should display workbook results. It should not maintain a second dependency graph.
+
+### Treating errors as exceptions
+
+Formula errors are cell values intended for display and propagation. Reserve thrown exceptions for programming or API failures.
+
+### Using JavaScript evaluation
+
+Never use `eval`, `new Function`, or runtime global lookup. Add language behavior through the parser and evaluator with tests.
+
+## Next
+
+- [`@spreadish/formula-engine` API](/docs/api/formula-engine)
+- [Core model](/docs/core-model)
+- [Import and export](/docs/import-export)
+- [Playground](/playground)

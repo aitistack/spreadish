@@ -1,0 +1,75 @@
+# Roadmap
+
+Spreadish V1 is feature-complete for the programmable sparse spreadsheet engine. This page states what that means in practice, what ships for release, and the direction of post-V1 work.
+
+## V1 maturity
+
+V1 means hosts can ship a real spreadsheet surface without owning Excel:
+
+| Area                                                  | Status             |
+| ----------------------------------------------------- | ------------------ |
+| Sparse core workbook + commands                       | Shipped            |
+| Selection, editing, clipboard                         | Shipped            |
+| Rows, columns, resize, hide, freeze, DnD presentation | Shipped            |
+| Virtualized React grid                                | Shipped            |
+| Undo / redo and cell formatting                       | Shipped            |
+| Formula engine (no `eval`)                            | Shipped            |
+| Sometic sessions + multi-workbook workspaces          | Shipped            |
+| JSON / CSV / TSV import and export                    | Shipped            |
+| Hardening, stubs cleanup, docs site + playground      | Shipped            |
+| npm packages + Changesets + OIDC Trusted Publishing   | Shipped (Phase 10) |
+
+### What V1 is good for
+
+- Embedding a sparse workbook in a React product
+- Deterministic command-driven mutations with honest undo
+- Offline-first persistence through `@spreadish/sometic`
+- Host-owned chrome with Spreadish owning document truth
+
+### What V1 is not
+
+Do not plan V1 delivery around: pivot tables, charts, macros/VBA, realtime multi-user collaboration, full Excel formula parity, XLSX binary fidelity, or complex in-cell rich text.
+
+## Release baseline
+
+Phase 10 is complete. V1 is the published baseline agents and hosts should target:
+
+1. Public packages: `@spreadish/utils`, `@spreadish/formula-engine`, `@spreadish/core`, `@spreadish/react`, `@spreadish/sometic`
+2. Changesets version PR + GitHub Release → `publish.yml` with npm Trusted Publishing (OIDC + provenance)
+3. Consumer install docs on [Getting started](/docs/getting-started)
+4. Local gates include `package:check` and `package:smoke` (pack + leaf tarball install)
+
+Do not publish from a developer laptop. See the public [Contributing](/docs/contributing) guide for the release sequence.
+
+## Glimpse: planned work after V1
+
+Post-V1 work is expected to land as optional packages or clearly versioned features — not as silent scope creep inside `@spreadish/core`. Directional glimpse (order may change):
+
+1. **Broader formula library** — more Excel-familiar functions without claiming full parity
+2. **XLSX interchange** — only with a permissively licensed implementation
+3. **Charts and pivots** — likely separate packages that read workbook snapshots
+4. **Collaboration** — realtime multi-user sync is intentionally out of V1; any path would sit above core commands
+5. **Richer cell content** — structured rich text and host-defined cell renderers
+6. **Host plugin surfaces** — documented extension points for custom commands, formatters, and toolbar actions
+
+None of these are promised dates. Prefer the playground and current docs over inventing APIs for unreleased features.
+
+## For agents
+
+Paste the **Copy Prompt** brief from the site header (or home hero) into your coding agent before implementing a host. It encodes V1 boundaries, package rules, and the minimal React integration pattern. Full text also lives at [/llms-full.txt](/llms-full.txt).
+
+Deep guides for hosts and contributors:
+
+- [Getting started](/docs/getting-started)
+- [Architecture](/docs/architecture)
+- [Core model](/docs/core-model)
+- [React renderer](/docs/react)
+- [Persistence and workspaces](/docs/persistence)
+- [Contributing](/docs/contributing)
+
+## Keep reading
+
+- [Getting started](/docs/getting-started)
+- [Architecture](/docs/architecture)
+- [Integration recipes](/docs/recipes)
+- [Contributing](/docs/contributing)

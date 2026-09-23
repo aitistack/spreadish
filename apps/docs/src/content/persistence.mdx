@@ -1,0 +1,238 @@
+import { previewWorkbooks } from '../assets/previews';
+
+# Persistence and workspaces
+
+`@spreadish/sometic` is the official persistence boundary for Spreadish. Core remains framework-independent: the host serializes a workbook and gives that snapshot to a Sometic session.
+
+## Install
+
+<InstallTabs packages="@spreadish/core @spreadish/sometic" />
+
+## Choose a storage adapter
+
+For browser applications, use IndexedDB:
+
+```ts
+import { createIndexedDBStorageAdapter } from '@spreadish/sometic';
+
+const storage = createIndexedDBStorageAdapter({
+    dbName: 'my-spreadsheet-app',
+});
+```
+
+Other exported adapters are useful in tests or simpler hosts:
+
+```ts
+import { createMemoryStorage, createWebStorageAdapter } from '@spreadish/sometic';
+
+const testStorage = createMemoryStorage();
+const localStorageAdapter = createWebStorageAdapter(localStorage);
+```
+
+Prefer IndexedDB for production workbooks. Web Storage is synchronous, has smaller quotas, and may block the main thread with larger snapshots.
+
+## Single-workbook session
+
+A session hydrates one persisted document, tracks save status, queues offline mutations, and exposes explicit sync controls.
+
+<SnippetPreview
+  title="Hydrate and autosave a workbook"
+  description="Restore before rendering, then commit only serialized domain changes."
+  language="ts"
+  code={`import { createWorkbook, loadWorkbook } from '@spreadish/core'
+import {
+  createIndexedDBStorageAdapter,
+  createNoopSyncTransport,
+  createWorkbookSession,
+  isPersistableDomainEvent,
+} from '@spreadish/sometic'
+
+const session = createWorkbookSession({
+storage: createIndexedDBStorageAdapter({ dbName: 'my-app' }),
+key: 'workbook.main',
+workbookId: 'wb_main',
+sync: createNoopSyncTransport(),
+})
+
+await session.hydrated
+
+const snapshot = session.getSnapshot()
+const workbook = snapshot.serialized
+? loadWorkbook(snapshot.serialized)
+: createWorkbook({ name: 'Untitled Workbook', sheetName: 'Sheet 1' })
+
+const unsubscribe = workbook.subscribe((event) => {
+if (!isPersistableDomainEvent(event)) return
+void session.commitSerialized(workbook.serialize())
+})
+
+// Later:
+// unsubscribe()
+// session.dispose()`}
+/>
+
+Do not render a seeded workbook and then replace it after hydration. Wait for `session.hydrated` before deciding whether to load or create.
+
+## Save status
+
+`session.getSnapshot()` exposes:
+
+- `status`: `hydrating`, `saving`, `saved`, `offline`, or `error`
+- `hydrated`: whether the initial read finished
+- `serialized`: the latest workbook snapshot, or `null`
+- `revision`: persisted revision number
+- `pendingCount`: queued sync mutations
+- `lastSavedAt`: successful save timestamp
+- `lastError`: persistence or sync error
+- `online`: current connectivity mode
+
+Subscribe when the UI needs a live status indicator:
+
+```ts
+const unsubscribe = session.subscribe(() => {
+    const { status, lastError } = session.getSnapshot();
+    console.log(status, lastError);
+});
+```
+
+## Persist only domain changes
+
+Selection, draft typing, clipboard state, history ticks, and generic transaction notifications are intentionally not persisted.
+
+```ts
+import { isPersistableDomainEvent, NON_PERSISTABLE_EVENT_TYPES } from '@spreadish/sometic';
+
+workbook.subscribe((event) => {
+    if (isPersistableDomainEvent(event)) {
+        void session.commitSerialized(workbook.serialize());
+    }
+});
+
+console.log(NON_PERSISTABLE_EVENT_TYPES);
+```
+
+Debounce commits in write-heavy applications, but flush before switching documents or closing a controlled workflow.
+
+## Sync transports
+
+Use `createNoopSyncTransport()` for local-only persistence.
+
+Use `createMemorySyncTransport()` for deterministic tests of queueing and acknowledgements:
+
+```ts
+import { createMemorySyncTransport, createWorkbookSession } from '@spreadish/sometic';
+
+const sync = createMemorySyncTransport();
+
+const session = createWorkbookSession({
+    storage,
+    workbookId: 'wb_test',
+    sync,
+    online: false,
+});
+
+session.setOnline(true);
+await session.syncNow();
+```
+
+A production remote transport implements the exported `SyncTransport` contract. Storage and remote sync are separate concerns: a workbook can be safely saved locally while offline.
+
+## Multi-workbook workspace
+
+A workspace persists a catalog plus one active workbook session.
+
+<SnippetPreview
+    variant="playground"
+    title="Workbook catalog"
+    description="Create, switch, rename, and remove persisted workbooks."
+    image={previewWorkbooks}
+    caption="The playground header uses the same workspace model."
+/>
+
+```ts
+import { createWorkbook, loadWorkbook } from '@spreadish/core';
+import { createIndexedDBStorageAdapter, createWorkbookWorkspace } from '@spreadish/sometic';
+
+const workspace = createWorkbookWorkspace({
+    storage: createIndexedDBStorageAdapter({ dbName: 'my-app' }),
+    prefix: 'app.workbook',
+    legacyKey: 'app.workbook',
+    defaultName: 'Untitled Workbook',
+});
+
+await workspace.hydrated;
+
+function openActiveWorkbook() {
+    const session = workspace.getActiveSession();
+    const snapshot = session.getSnapshot();
+
+    return snapshot.serialized
+        ? loadWorkbook(snapshot.serialized)
+        : createWorkbook({
+              name: workspace.list().find((entry) => entry.id === workspace.getActiveId())?.name,
+              sheetName: 'Sheet 1',
+          });
+}
+
+let workbook = openActiveWorkbook();
+
+const budgetId = await workspace.create('Budget');
+workbook = openActiveWorkbook();
+
+await workspace.renameInCatalog(budgetId, 'Budget FY27');
+await workspace.switchTo(workspace.list()[0]!.id);
+workbook = openActiveWorkbook();
+```
+
+Before switching, commit or flush the current workbook. After switching, replace the live core instance with one loaded from the new active session.
+
+`remove(id)` rejects deletion of the last workbook, so a workspace always has an active document.
+
+## Catalog fields
+
+Each catalog entry contains:
+
+- `id`: stable workbook identity
+- `name`: display name
+- `storageKey`: persisted session key
+- `updatedAt`: catalog update timestamp
+
+If the workbook name changes through `renameWorkbook`, also update the catalog name with `renameInCatalog`.
+
+## Playground configuration
+
+The public playground uses:
+
+- IndexedDB database: `spreadish-playground`
+- Workspace prefix: `playground.workbook`
+- Legacy migration key: `playground.workbook`
+- Header dropdown: create, switch, and delete
+
+## Cleanup
+
+Dispose subscriptions and sessions during application teardown:
+
+```ts
+unsubscribeWorkbook();
+unsubscribeSession();
+session.dispose();
+```
+
+For a workspace, call `workspace.dispose()`. Do not continue using a disposed session.
+
+## Common pitfalls
+
+- Committing before hydration can overwrite stored content.
+- Saving every event causes unnecessary writes.
+- Persisting the `Workbook` object itself will not produce a portable snapshot; use `serialize()`.
+- A catalog rename does not automatically rename core workbook state.
+- Switching sessions does not mutate an existing core workbook into the new document.
+- Web Storage is not a substitute for IndexedDB when snapshots can grow.
+- Ignoring `lastError` can make a “Saved” indicator misleading.
+
+## Guides
+
+- [Getting started](/docs/getting-started)
+- [Integration recipes](/docs/recipes)
+- [Import and export](/docs/import-export)
+- [`@spreadish/sometic` API](/docs/api/sometic)

@@ -1,0 +1,50 @@
+# Security
+
+How Spreadish approaches security in the engine and how to report vulnerabilities.
+
+<Banner title="Report privately first">
+    Please use [GitHub Security
+    Advisories](https://github.com/aitistack/spreadish/security/advisories/new) rather than public
+    issues for suspected vulnerabilities.
+</Banner>
+
+## Engine posture
+
+Spreadish is designed with these hard rules:
+
+<Checklist>
+    <li>
+        Formulas never use <code>eval</code> or <code>new Function</code>
+    </li>
+    <li>Import paths validate size, structure, and dangerous keys</li>
+    <li>Core stays free of React and browser-only APIs that would blur trust boundaries</li>
+    <li>Persistence adapters treat stored snapshots as untrusted until validated</li>
+</Checklist>
+
+See also the agent-facing security notes in the repository and the public [Formulas](/docs/formulas) / [Import and export](/docs/import-export) guides.
+
+## What to report
+
+Please report:
+
+- Unexpected code execution paths in formula evaluation
+- Prototype pollution or unsafe deserialization in import/persistence
+- XSS risks in the React grid or docs playground when driven by workbook data
+- Supply-chain issues in published `@spreadish/*` packages
+
+## What not to report here
+
+- Feature requests and general bugs → [GitHub Issues](https://github.com/aitistack/spreadish/issues)
+- Documentation typos → pull requests welcome
+
+## Disclosure
+
+We aim to acknowledge reports promptly and coordinate fixes before public disclosure when the issue is confirmed.
+
+## Machine-readable policy
+
+Canonical security contact file:
+
+[`/.well-known/security.txt`](/.well-known/security.txt)
+
+Last updated: September 2026.

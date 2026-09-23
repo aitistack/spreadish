@@ -1,0 +1,28 @@
+name: Package Smoke
+
+on:
+    workflow_run:
+        workflows: ['Publish']
+        types: [completed]
+
+jobs:
+    smoke:
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org
+                  package-manager-cache: false
+
+            - run: bun install --frozen-lockfile
+            - run: bun run build
+            - run: bun run package:smoke
+            - run: bun run package:registry-smoke

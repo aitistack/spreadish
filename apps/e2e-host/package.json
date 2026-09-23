@@ -1,0 +1,9 @@
+{
+    "name": "@spreadish/e2e-host",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "start": "bun run server.ts"
+    }
+}

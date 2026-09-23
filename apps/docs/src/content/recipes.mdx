@@ -1,0 +1,316 @@
+import { previewFormula, previewGrid } from '../assets/previews';
+
+# Integration recipes
+
+These recipes keep the workbook authoritative: UI handlers dispatch commands, subscribers trigger rendering, and persistence receives serialized snapshots.
+
+<Callout tone="tip" title="Copy, then adapt">
+    Each recipe assumes TypeScript and Bun or your host package manager. Prefer commands over
+    mutating React state for workbook fields.
+</Callout>
+
+## Minimal React grid
+
+<InstallTabs packages="@spreadish/core @spreadish/react" />
+
+<SnippetPreview
+    variant="playground"
+    title="What you are hosting"
+    description="A virtualized grid surrounded by host-owned application chrome."
+    image={previewGrid}
+/>
+
+```tsx
+import { useEffect, useMemo, useState } from 'react';
+import { createWorkbook } from '@spreadish/core';
+import { SpreadsheetGrid } from '@spreadish/react';
+import '@spreadish/react/styles.css';
+
+export function MinimalGrid() {
+    const workbook = useMemo(() => createWorkbook({ name: 'Demo', sheetName: 'Sheet 1' }), []);
+    const [, render] = useState(0);
+
+    useEffect(() => workbook.subscribe(() => render((version) => version + 1)), [workbook]);
+
+    const sheetId = workbook.getState().activeSheetId;
+    const editor = workbook.getEditor();
+
+    return (
+        <div style={{ height: 500 }}>
+            <SpreadsheetGrid
+                workbook={workbook}
+                sheetId={sheetId}
+                selection={workbook.getSelection()}
+                editor={editor}
+                clipboard={workbook.getClipboard()}
+                draft={editor.status === 'editing' ? editor.draft : ''}
+                showCellEditor
+                onSelect={(row, column) => {
+                    if (!sheetId) return;
+                    workbook.execute({ type: 'selectCell', sheetId, row, column });
+                }}
+                onDraftChange={(draft) => workbook.execute({ type: 'updateDraft', draft })}
+                onBeginEdit={(intent) => workbook.execute({ type: 'startEditing', intent })}
+                onCommit={(move) => workbook.execute({ type: 'commitEditing', move })}
+                onCancelEdit={() => workbook.execute({ type: 'cancelEditing' })}
+            />
+        </div>
+    );
+}
+```
+
+## Undo and redo
+
+History is part of the live workbook API:
+
+```ts
+function undo() {
+    if (workbook.canUndo()) workbook.undo();
+}
+
+function redo() {
+    if (workbook.canRedo()) workbook.redo();
+}
+```
+
+Subscriptions receive `historyChanged`, allowing buttons to reflect current availability:
+
+```tsx
+<button disabled={!workbook.canUndo()} onClick={() => workbook.undo()}>
+  Undo
+</button>
+<button disabled={!workbook.canRedo()} onClick={() => workbook.redo()}>
+  Redo
+</button>
+```
+
+Do not persist undo and redo stacks. Serialized workbook content is persisted; session history is intentionally local to the current instance.
+
+## Apply a style patch
+
+Use `applyStylePatch` to merge formatting into one or more ranges:
+
+```ts
+workbook.execute({
+    type: 'applyStylePatch',
+    sheetId,
+    ranges: [
+        {
+            startRow: 0,
+            endRow: 0,
+            startColumn: 0,
+            endColumn: 3,
+        },
+    ],
+    patch: {
+        fontWeight: 'bold',
+        fill: '#eef2ff',
+        horizontalAlign: 'center',
+    },
+});
+```
+
+A patch changes only the supplied properties. This is safer for toolbar controls than replacing a complete style object.
+
+## Formula bar
+
+<SnippetPreview
+    variant="playground"
+    title="Formula source and computed display"
+    description="The bar retains =SUM(...) while the selected cell displays its result."
+    image={previewFormula}
+/>
+
+```tsx
+const editor = workbook.getEditor()
+const selection = workbook.getSelection()
+const active = selection?.active
+const cell =
+  sheetId && active
+    ? workbook.getCell(sheetId, active.row, active.column)
+    : undefined
+
+const formulaBarValue =
+  editor.status === 'editing'
+    ? editor.draft
+    : cell?.formula ?? formatCellDisplay(cell)
+
+<input
+  data-testid="formula-bar"
+  value={formulaBarValue}
+  onFocus={() =>
+    workbook.execute({
+      type: 'startEditing',
+      draft: cell?.formula,
+      intent: 'edit',
+    })
+  }
+  onChange={(event) =>
+    workbook.execute({
+      type: 'updateDraft',
+      draft: event.target.value,
+    })
+  }
+  onKeyDown={(event) => {
+    if (event.key === 'Enter') {
+      workbook.execute({ type: 'commitEditing', move: 'down' })
+    }
+    if (event.key === 'Escape') {
+      workbook.execute({ type: 'cancelEditing' })
+    }
+  }}
+/>
+```
+
+Import `formatCellDisplay` from `@spreadish/react`. Keep the edit draft in core instead of maintaining an unrelated second copy.
+
+## Plan and apply a CSV import
+
+Parsing is separate from mutation. First create a plan, inspect it if needed, and then apply it through a command:
+
+```ts
+import { planDelimitedSheetImport } from '@spreadish/core';
+
+const plan = planDelimitedSheetImport(sheetId, csvText, ',', {
+    row: 0,
+    column: 0,
+});
+
+workbook.execute({
+    type: 'importSheetGrid',
+    sheetId: plan.sheetId,
+    row: plan.row,
+    column: plan.column,
+    values: plan.values,
+});
+```
+
+This pattern keeps imports deterministic and undoable. Catch `ImportError` to present invalid files without replacing the current workbook.
+
+## Clipboard integration
+
+Core owns an internal structured clipboard:
+
+```ts
+workbook.execute({ type: 'copySelection' });
+workbook.execute({ type: 'pasteClipboard' });
+```
+
+For operating-system clipboard interoperability, TSV is the portable format:
+
+```ts
+workbook.execute({ type: 'copySelection' });
+
+const text = workbook.getClipboard()?.tsv;
+if (text !== undefined) {
+    await navigator.clipboard.writeText(text);
+}
+```
+
+Clipboard APIs can fail outside HTTPS, without permission, or without a user gesture. Keep core copy and paste usable even when `navigator.clipboard` is unavailable, and handle rejected promises.
+
+Never inject clipboard text as HTML.
+
+## Multi-sheet workbooks
+
+Create, activate, rename, move, and delete sheets through commands:
+
+```ts
+workbook.execute({
+    type: 'createSheet',
+    name: 'Forecast',
+    activate: true,
+});
+
+const forecastId = workbook.getState().activeSheetId!;
+
+workbook.execute({
+    type: 'renameSheet',
+    sheetId: forecastId,
+    name: 'Forecast FY27',
+});
+
+workbook.execute({
+    type: 'moveSheet',
+    sheetId: forecastId,
+    toIndex: 0,
+});
+
+workbook.execute({
+    type: 'activateSheet',
+    sheetId: workbook.getState().sheetOrder[0]!,
+});
+```
+
+Use stable sheet IDs in callbacks. Array indexes describe current order, not identity.
+
+## Formula cell
+
+```ts
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 0,
+    value: 2,
+});
+
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 1,
+    value: '=A1^2',
+});
+```
+
+Read `cell.formula` for source text and `cell.value` for the computed result.
+
+## Debounced IndexedDB autosave
+
+```ts
+import {
+    createIndexedDBStorageAdapter,
+    createWorkbookSession,
+    isPersistableDomainEvent,
+} from '@spreadish/sometic';
+
+const session = createWorkbookSession({
+    storage: createIndexedDBStorageAdapter({ dbName: 'recipes' }),
+    key: 'recipe.session',
+    workbookId: 'wb_recipe',
+});
+
+await session.hydrated;
+
+let timer: ReturnType<typeof setTimeout> | undefined;
+
+workbook.subscribe((event) => {
+    if (!isPersistableDomainEvent(event)) return;
+
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+        void session.commitSerialized(workbook.serialize());
+    }, 200);
+});
+```
+
+Flush outstanding work before intentionally switching or disposing the session.
+
+## Export the active sheet
+
+```ts
+import { exportSheetCsv } from '@spreadish/core';
+
+const sheetId = workbook.getState().activeSheetId!;
+const csv = exportSheetCsv(workbook, sheetId);
+```
+
+Browser download logic belongs in the host, not core.
+
+## Guides
+
+- [Getting started](/docs/getting-started)
+- [React renderer](/docs/react)
+- [Persistence and workspaces](/docs/persistence)
+- [Import and export](/docs/import-export)

@@ -1,10 +1,38 @@
-# Bootstrap: main tracks only community files until development merges.
-# On the development branch, replace this file with .gitignore.development:
-#   cp .gitignore.development .gitignore
-/*
-!/.gitignore
-!/.gitignore.development
-!/README.md
-!/CONTRIBUTING.md
-!/SECURITY.md
-!/LICENSE
+# Full-repo ignore rules for the development branch (and for main after merge).
+# Activate with: cp .gitignore.development .gitignore
+
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.turbo/
+.cache/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+*.log
+.tmp-ui/
+.tmp-pack-*/
+apps/playground/.tmp-*.png
+.cursor/
+.vscode/
+.idea/
+.cursorrules
+.cursorignore.local
+.cursorignore
+.cursorindexignore
+.cursorindexingignore
+.agents/
+
+# Agent-only materials at repo root (not public / not apps)
+/docs/
+/AGENTS.md
+/MASTER_PROMPT.md
+/playground.png
+/icon.png
+/logo.png

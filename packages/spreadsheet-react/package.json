@@ -1,0 +1,63 @@
+{
+    "name": "@spreadish/react",
+    "version": "0.0.0",
+    "description": "Virtualized React spreadsheet grid for Spreadish.",
+    "license": "MIT",
+    "author": "Spreadish contributors",
+    "homepage": "https://spreadish.aitistack.com/docs/api/react",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/aitistack/spreadish.git",
+        "directory": "packages/spreadsheet-react"
+    },
+    "bugs": {
+        "url": "https://github.com/aitistack/spreadish/issues"
+    },
+    "keywords": [
+        "spreadsheet",
+        "spreadish",
+        "react",
+        "virtualization"
+    ],
+    "type": "module",
+    "sideEffects": [
+        "./dist/react.css"
+    ],
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        },
+        "./styles.css": {
+            "import": "./dist/react.css",
+            "default": "./dist/react.css"
+        }
+    },
+    "files": [
+        "dist",
+        "LICENSE",
+        "README.md"
+    ],
+    "publishConfig": {
+        "access": "public",
+        "provenance": true
+    },
+    "scripts": {
+        "build": "vite build && tsc -p tsconfig.build.json --emitDeclarationOnly",
+        "typecheck": "tsc -p tsconfig.json --noEmit",
+        "prepack": "bun run build"
+    },
+    "peerDependencies": {
+        "react": "^19.1.1",
+        "react-dom": "^19.1.1"
+    },
+    "dependencies": {
+        "@spreadish/core": "workspace:*",
+        "@tanstack/react-virtual": "3.14.13"
+    },
+    "devDependencies": {
+        "@types/react": "^19.1.13",
+        "@types/react-dom": "^19.1.9"
+    }
+}

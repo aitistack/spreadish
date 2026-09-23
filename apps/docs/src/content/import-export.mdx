@@ -1,0 +1,348 @@
+# Import and export
+
+`@spreadish/core` provides versioned JSON workbook import/export and CSV or TSV sheet interchange. Imports are treated as untrusted input, validated against explicit limits, and applied through workbook commands.
+
+XLSX is not part of V1. It is planned for post-V1 work.
+
+## Available operations
+
+| Function                   | Result                                                  |
+| -------------------------- | ------------------------------------------------------- |
+| `exportWorkbookJson`       | Serialize a complete workbook to JSON text              |
+| `importWorkbookJson`       | Validate JSON text and return a restored `Workbook`     |
+| `exportSheetCsv`           | Export a sheet's used range as CSV                      |
+| `exportSheetTsv`           | Export a sheet's used range as TSV                      |
+| `planDelimitedSheetImport` | Parse CSV or TSV into an `importSheetGrid` command plan |
+
+## JSON workbook export
+
+Export a live workbook:
+
+```ts
+import { exportWorkbookJson } from '@spreadish/core';
+
+const compact = exportWorkbookJson(workbook);
+const readable = exportWorkbookJson(workbook, { pretty: true });
+```
+
+`exportWorkbookJson` also accepts a serialized workbook snapshot. Pretty output includes indentation and a trailing newline; compact output is suitable for storage or transfer.
+
+A JSON workbook includes the versioned document state, stable IDs, sheet order, sparse cells, styles, and formulas.
+
+## JSON workbook import
+
+`importWorkbookJson` returns a live `Workbook`:
+
+```ts
+import { importWorkbookJson } from '@spreadish/core';
+
+const restored = importWorkbookJson(text);
+const sheetId = restored.getState().activeSheetId;
+```
+
+The helper:
+
+1. Checks the input size
+2. Parses JSON
+3. Migrates supported older V1-shaped payloads
+4. Rejects unsupported schema versions
+5. Validates workbook structure, IDs, cells, and dangerous keys
+6. Restores a live workbook through core
+
+Do not call `JSON.parse` and cast the result to a workbook type. A TypeScript assertion does not validate untrusted runtime data.
+
+## Handle import failures
+
+Validation failures are reported as `ImportError`:
+
+```ts
+import { ImportError, importWorkbookJson } from '@spreadish/core';
+
+try {
+    const restored = importWorkbookJson(text);
+    // Replace or open the workbook only after successful validation.
+} catch (error) {
+    if (error instanceof ImportError) {
+        console.error(error.code, error.message);
+    } else {
+        throw error;
+    }
+}
+```
+
+Useful error categories include invalid JSON, an invalid workbook, unsupported schema versions, oversized input, and exceeded row, column, or cell limits.
+
+Show a useful message to the user, but do not continue with a partially validated workbook.
+
+## Download a workbook in the browser
+
+<SnippetPreview
+  title="Download a JSON backup"
+  description="Browser download behavior remains in the host; core only produces text."
+  language="ts"
+  code={`import { exportWorkbookJson, type Workbook } from '@spreadish/core'
+
+export function downloadWorkbook(workbook: Workbook) {
+  const text = exportWorkbookJson(workbook, { pretty: true })
+  const blob = new Blob([text], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+
+try {
+const anchor = document.createElement('a')
+anchor.href = url
+anchor.download = \`\${workbook.getState().name || 'workbook'}.json\`
+anchor.click()
+} finally {
+URL.revokeObjectURL(url)
+}
+}`}
+/>
+
+Blob creation and file selection are host responsibilities because core remains independent of browser APIs.
+
+## Export a sheet as CSV or TSV
+
+```ts
+import { exportSheetCsv, exportSheetTsv } from '@spreadish/core';
+
+const sheetId = workbook.getState().activeSheetId!;
+
+const csv = exportSheetCsv(workbook, sheetId);
+const tsv = exportSheetTsv(workbook, sheetId);
+```
+
+Delimited export uses the sheet's occupied range. Leading empty coordinates outside that used range are not emitted. An entirely empty sheet exports as an empty string.
+
+CSV encoding handles commas, quotes, and embedded newlines. TSV uses tab delimiters.
+
+If the requested sheet does not exist, export throws an `ImportError` with an export-specific code.
+
+## Plan a delimited import
+
+Create a bounded plan with the target sheet ID, text, and delimiter:
+
+```ts
+import { planDelimitedSheetImport } from '@spreadish/core';
+
+const plan = planDelimitedSheetImport(sheetId, csvText, ',');
+```
+
+For TSV:
+
+```ts
+const plan = planDelimitedSheetImport(sheetId, tsvText, '\t');
+```
+
+Apply the plan through a command:
+
+```ts
+const result = workbook.execute({
+    type: 'importSheetGrid',
+    ...plan,
+});
+
+if (!result.applied) {
+    console.log('The import did not change the workbook');
+}
+```
+
+Planning and application are separate on purpose. Parsing can fail before workbook state changes, and applying the completed plan becomes one deterministic undo step.
+
+## Import at an offset
+
+Use optional row and column indexes:
+
+```ts
+const plan = planDelimitedSheetImport(sheetId, csvText, ',', {
+    row: 5,
+    column: 2,
+});
+
+workbook.execute({
+    type: 'importSheetGrid',
+    ...plan,
+});
+```
+
+The example starts the import at row index `5`, column index `2`, which corresponds to `C6`.
+
+## Token normalization
+
+Delimited imports normalize common scalar forms:
+
+- An empty token becomes no cell record
+- `TRUE` and `FALSE` become booleans
+- Valid numeric tokens become numbers
+- A token beginning with `=` becomes a formula
+- Other tokens remain strings
+
+For example:
+
+```text
+Name,Amount,Active,Double
+Alpha,20,TRUE,=B2*2
+```
+
+Ragged rows are padded during parsing so the planned grid remains rectangular.
+
+If an identifier must remain text, format the source accordingly before import. For example, a plain numeric-looking token such as `00123` may be interpreted according to numeric token rules.
+
+## Import limits
+
+The default safeguards are:
+
+| Constant             |         Limit |
+| -------------------- | ------------: |
+| `MAX_IMPORT_BYTES`   |          5 MB |
+| `MAX_IMPORT_ROWS`    |   10,000 rows |
+| `MAX_IMPORT_COLUMNS` |   512 columns |
+| `MAX_IMPORT_CELLS`   | 200,000 cells |
+
+These limits apply before imported data becomes workbook state. The cell limit uses the rectangular imported grid, including padded positions.
+
+The constants are public:
+
+```ts
+import {
+    MAX_IMPORT_BYTES,
+    MAX_IMPORT_CELLS,
+    MAX_IMPORT_COLUMNS,
+    MAX_IMPORT_ROWS,
+} from '@spreadish/core';
+```
+
+Hosts may choose stricter limits:
+
+```ts
+const plan = planDelimitedSheetImport(sheetId, csvText, ',', {
+    limits: {
+        maxBytes: 1_000_000,
+        maxRows: 2_000,
+        maxColumns: 100,
+        maxCells: 50_000,
+    },
+});
+```
+
+Do not raise defaults casually. Parsing and planning happen before virtualization can reduce rendering work.
+
+## Dangerous-key rejection
+
+Imported JSON can attempt prototype pollution through property names such as:
+
+```text
+__proto__
+prototype
+constructor
+```
+
+Spreadish uses the shared `rejectDangerousKeys` validation pattern and workbook deserialization checks to reject dangerous structures.
+
+This is one reason to use `importWorkbookJson` instead of manually parsing and casting JSON. Imported files must always be treated as hostile, even when they use the expected extension.
+
+## Undo and redo
+
+Delimited grid application is a workbook command:
+
+```ts
+const plan = planDelimitedSheetImport(sheetId, text, ',');
+workbook.execute({ type: 'importSheetGrid', ...plan });
+
+workbook.undo();
+workbook.redo();
+```
+
+The complete grid import should undo and redo as one operation.
+
+A JSON workbook import is different: it creates a restored workbook. The host decides whether to open it as another workbook, replace the active workbook, or store it in a workspace.
+
+## Replace safely in a host
+
+Validate before replacing current state:
+
+```ts
+import { ImportError, importWorkbookJson } from '@spreadish/core';
+
+async function openWorkbookFile(file: File) {
+    const text = await file.text();
+
+    try {
+        const imported = importWorkbookJson(text);
+        return imported;
+    } catch (error) {
+        if (error instanceof ImportError) {
+            showImportError(error.message);
+            return null;
+        }
+
+        throw error;
+    }
+}
+```
+
+Do not delete or overwrite the current persisted workbook until the imported workbook has passed validation and the user has confirmed the replacement behavior.
+
+## Edge cases to test
+
+For JSON:
+
+- Empty text
+- Malformed JSON
+- Non-object roots
+- Missing or unsupported schema versions
+- Duplicate or invalid IDs
+- Corrupted sheet references
+- Dangerous keys
+- Input above the byte limit
+- Formula and style round trips
+- Sparse distant cells
+
+For CSV and TSV:
+
+- Empty input
+- Empty sheet export
+- Quotes, delimiters, and embedded newlines
+- Ragged rows
+- Empty leading or trailing values
+- Boolean, numeric, formula, and string tokens
+- Row, column, and total-cell limits
+- Import offsets
+- Missing target sheets
+- One-step undo and redo
+- Formulas recalculated after application
+
+## Common pitfalls
+
+### Using the wrong argument order
+
+The signature is:
+
+```ts
+planDelimitedSheetImport(sheetId, text, delimiter);
+```
+
+The sheet ID is first.
+
+### Parsing CSV by splitting lines
+
+CSV fields may contain escaped quotes, commas, and embedded newlines. Use the supplied parser and planner.
+
+### Applying each imported cell separately
+
+That creates excessive events and history entries. Apply the plan with `importSheetGrid`.
+
+### Trusting file extensions
+
+A `.json` or `.csv` filename says nothing about the contents. Validate the text.
+
+### Expecting XLSX support
+
+XLSX is post-V1. Convert the source to CSV/TSV or use the versioned JSON workbook format for complete Spreadish backups.
+
+## Next
+
+- [Core model](/docs/core-model)
+- [Formulas](/docs/formulas)
+- [Integration recipes](/docs/recipes)
+- [`@spreadish/core` API](/docs/api/core)
+- [Playground](/playground)

@@ -1,0 +1,40 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "paths": {
+            "@spreadish/utils": ["./packages/spreadsheet-utils/src/index.ts"],
+            "@spreadish/formula-engine": ["./packages/formula-engine/src/index.ts"],
+            "@spreadish/core": ["./packages/spreadsheet-core/src/index.ts"],
+            "@spreadish/react": ["./packages/spreadsheet-react/src/index.ts"],
+            "@spreadish/sometic": ["./packages/spreadsheet-sometic/src/index.ts"],
+            "@spreadish/testing": ["./packages/spreadsheet-testing/src/index.ts"],
+            "@playground/*": ["./apps/playground/src/*"]
+        }
+    },
+    "include": [
+        "packages/*/src/**/*.ts",
+        "packages/*/src/**/*.tsx",
+        "apps/playground/src/**/*.ts",
+        "apps/playground/src/**/*.tsx",
+        "apps/playground/vite.config.ts",
+        "apps/docs/src/**/*.ts",
+        "apps/docs/src/**/*.tsx",
+        "apps/docs/src/**/*.mdx",
+        "apps/docs/vite.config.ts",
+        "tooling/**/*.ts",
+        "scripts/**/*.ts",
+        "e2e/**/*.ts",
+        "apps/e2e-host/**/*.ts",
+        "playwright.config.ts",
+        "eslint.config.js"
+    ],
+    "exclude": [
+        "**/dist/**",
+        "**/node_modules/**",
+        "**/coverage/**",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "packages/spreadsheet-sometic/src/test-fake-idb.ts"
+    ]
+}

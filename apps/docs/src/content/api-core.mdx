@@ -1,0 +1,230 @@
+# `@spreadish/core`
+
+Framework-independent workbook state, deterministic commands, history, formulas, formatting, and import/export helpers.
+
+## Install
+
+<InstallTabs packages="@spreadish/core" />
+
+## Create and load workbooks
+
+```ts
+import {
+    createWorkbook,
+    loadWorkbook,
+    type Workbook,
+    type SerializedWorkbook,
+} from '@spreadish/core';
+
+const workbook = createWorkbook({
+    name: 'Operations',
+    sheetName: 'Sheet 1',
+    maxHistoryEntries: 100,
+});
+
+const snapshot: SerializedWorkbook = workbook.serialize();
+const restored: Workbook = loadWorkbook(snapshot);
+```
+
+`createWorkbook` accepts an optional deterministic `idFactory`, which is useful in tests. `loadWorkbook` validates and reconstructs maps, stable IDs, and runtime state from a serialized snapshot.
+
+## Workbook API
+
+The main `Workbook` methods are:
+
+- `getState()`
+- `getSheet(sheetId)` and `getActiveSheet()`
+- `getCell(sheetId, row, column)`
+- `getSelection()`, `getEditor()`, and `getClipboard()`
+- `execute(command)`
+- `subscribe(listener)`
+- `canUndo()`, `canRedo()`, `undo()`, and `redo()`
+- `clearHistory()`
+- `getStyle(styleId)` and `resolveCellStyle(...)`
+- `serialize()`
+- `clone()`
+
+```ts
+const unsubscribe = workbook.subscribe((event) => {
+    console.log(event.type);
+});
+
+const result = workbook.execute({
+    type: 'setCellValue',
+    sheetId: workbook.getState().activeSheetId!,
+    row: 0,
+    column: 0,
+    value: 'Hello',
+});
+
+console.log(result.applied, result.events);
+unsubscribe();
+```
+
+## Commands
+
+`Command` is a discriminated union. Major groups include:
+
+- Cells: `setCellValue`, `clearCells`, `importSheetGrid`
+- Selection: `selectCell`, `selectRange`, `selectRows`, `selectColumns`, `selectAll`
+- Editing: `startEditing`, `updateDraft`, `commitEditing`, `cancelEditing`
+- Clipboard: `copySelection`, `cutSelection`, `pasteClipboard`
+- Sheets: `createSheet`, `renameSheet`, `deleteSheet`, `moveSheet`, `activateSheet`
+- Axes: insert, delete, move, resize, hide, and freeze rows or columns
+- Formatting: `upsertStyle`, `setCellsStyle`, `applyStylePatch`
+- Conditional formatting: `addConditionalFormat`, `removeConditionalFormat`
+- Fill: `autofillSelection`
+
+Mutations should always pass through `execute`.
+
+## Selection and navigation helpers
+
+```ts
+import {
+    createCellSelection,
+    createRangeSelection,
+    normalizeRange,
+    primaryRange,
+    selectionEqual,
+    jumpCoord,
+    stepCoord,
+    stepVisibleCoord,
+} from '@spreadish/core';
+```
+
+Coordinates are zero-based. Stable row and column IDs remain separate from their current display indexes.
+
+## History
+
+```ts
+if (workbook.canUndo()) workbook.undo();
+if (workbook.canRedo()) workbook.redo();
+
+workbook.clearHistory();
+```
+
+History is runtime state and is not included in `serialize()`.
+
+## Styles
+
+```ts
+import {
+    formatCellValueWithStyle,
+    isEmptyStyle,
+    mergeStyles,
+    resolveEffectiveStyle,
+    styleFingerprint,
+} from '@spreadish/core';
+
+workbook.execute({
+    type: 'applyStylePatch',
+    sheetId,
+    ranges: [{ startRow: 0, endRow: 2, startColumn: 0, endColumn: 1 }],
+    patch: { fontWeight: 'bold', numberFormat: '$#,##0.00' },
+});
+```
+
+Use `workbook.resolveCellStyle` for the final style of a displayed cell.
+
+## Formulas and recalculation
+
+Core exports lower-level conversion and recalculation helpers:
+
+```ts
+import {
+    cellValueToFormulaValue,
+    formulaValueToCellValue,
+    recalculateSheet,
+} from '@spreadish/core';
+```
+
+Most hosts should set formula strings through `setCellValue` and let the workbook recalculate automatically.
+
+## JSON import and export
+
+```ts
+import { exportWorkbookJson, importWorkbookJson } from '@spreadish/core';
+
+const json = exportWorkbookJson(workbook);
+const imported = importWorkbookJson(json);
+```
+
+Also exported:
+
+- `migrateSerializedWorkbook`
+- `CURRENT_WORKBOOK_SCHEMA_VERSION`
+- `ImportError`
+- Import byte, row, column, and cell limits
+- `assertImportByteSize` and `assertGridLimits`
+
+## CSV and TSV
+
+```ts
+import { exportSheetCsv, exportSheetTsv, planDelimitedSheetImport } from '@spreadish/core';
+
+const csv = exportSheetCsv(workbook, sheetId);
+const tsv = exportSheetTsv(workbook, sheetId);
+
+const plan = planDelimitedSheetImport(sheetId, csv, ',');
+workbook.execute({
+    type: 'importSheetGrid',
+    ...plan,
+});
+```
+
+Parsing and encoding helpers include `parseCsv`, `parseTsv`, `parseDelimited`, `encodeCsv`, and `encodeTsv`.
+
+## Autofill
+
+```ts
+import { planAutofill } from '@spreadish/core';
+
+const plan = planAutofill(sourceRange, { row: 12, column: 3 }, (row, column) =>
+    workbook.getCell(sheetId, row, column),
+);
+```
+
+Interactive hosts normally dispatch `autofillSelection`; `planAutofill` is available for lower-level planning and testing.
+
+## Important types
+
+Common exports include:
+
+```ts
+import type {
+    CellCoord,
+    CellInput,
+    CellRecord,
+    CellStyle,
+    CellStylePatch,
+    CellValue,
+    Command,
+    DomainEvent,
+    EditorState,
+    ExecuteResult,
+    NormalizedRange,
+    Selection,
+    SerializedWorkbook,
+    Sheet,
+    SheetId,
+    Workbook,
+    WorkbookState,
+} from '@spreadish/core';
+```
+
+## Pitfalls
+
+- Do not mutate maps returned by `getState()`.
+- Do not use row or column indexes as persistent identity.
+- Do not serialize the runtime `Workbook` object directly.
+- Do not bypass commands for UI mutations.
+- Do not assume an empty cell has a stored record.
+- Do not parse untrusted workbook JSON without the supplied import validation.
+- Do not persist selection, editor, clipboard, or history as workbook content.
+
+## Guides
+
+- [Core model](/docs/core-model)
+- [Formulas](/docs/formulas)
+- [Import and export](/docs/import-export)
+- [Integration recipes](/docs/recipes)

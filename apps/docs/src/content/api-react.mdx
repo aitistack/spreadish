@@ -1,0 +1,175 @@
+# `@spreadish/react`
+
+React presentation primitives for a virtualized Spreadish workbook.
+
+## Install
+
+<InstallTabs packages="@spreadish/core @spreadish/react" />
+
+Import styles once:
+
+```tsx
+import '@spreadish/react/styles.css';
+```
+
+## `SpreadsheetGrid`
+
+`SpreadsheetGrid` is controlled by a core workbook and host callbacks.
+
+<SnippetPreview
+  title="Render a controlled grid"
+  code={`import { SpreadsheetGrid } from '@spreadish/react'
+
+<SpreadsheetGrid
+  workbook={workbook}
+  sheetId={sheetId}
+  selection={workbook.getSelection()}
+  editor={workbook.getEditor()}
+  clipboard={workbook.getClipboard()}
+  draft={draft}
+  showCellEditor
+  onSelect={(row, column) => {
+    if (!sheetId) return
+    workbook.execute({ type: 'selectCell', sheetId, row, column })
+  }}
+  onDraftChange={(draft) =>
+    workbook.execute({ type: 'updateDraft', draft })
+  }
+  onBeginEdit={(intent) =>
+    workbook.execute({ type: 'startEditing', intent })
+  }
+  onCommit={(move) =>
+    workbook.execute({ type: 'commitEditing', move })
+  }
+  onCancelEdit={() =>
+    workbook.execute({ type: 'cancelEditing' })
+  }
+/>`}
+/>
+
+Important `SpreadsheetGridProps` include:
+
+- `workbook`
+- `sheetId`
+- `selection`
+- `editor`
+- `clipboard`
+- `draft`
+- `rowCount` and `columnCount`
+- `getRowHeight` and `getColumnWidth`
+- `hiddenRows` and `hiddenColumns`
+- `layoutVersion`
+- `onSelect`
+- `onDraftChange`
+- `onBeginEdit`
+- `onCommit`
+- `onCancelEdit`
+- `onAutofill`
+- `showCellEditor`
+- Custom row and column header renderers
+- `className` and `aria-label`
+
+## Defaults
+
+```ts
+import {
+    DEFAULT_COLUMN_COUNT,
+    DEFAULT_COLUMN_HEADER_HEIGHT,
+    DEFAULT_COLUMN_WIDTH,
+    DEFAULT_ROW_COUNT,
+    DEFAULT_ROW_HEADER_WIDTH,
+    DEFAULT_ROW_HEIGHT,
+} from '@spreadish/react';
+```
+
+The default logical extent is `300` rows by `40` columns.
+
+## `useSpreadsheetKeyboard`
+
+```ts
+import { useSpreadsheetKeyboard } from '@spreadish/react';
+
+useSpreadsheetKeyboard({
+    workbook,
+    sheetId,
+    selection,
+    editor,
+    draft,
+    editing: editor.status === 'editing',
+    rowCount,
+    columnCount,
+    onDraftChange,
+    onCommit,
+    onBeginEdit,
+    onCancelEdit,
+    focusGrid,
+});
+```
+
+The hook routes spreadsheet navigation, editing, clipboard, select-all, and history shortcuts. `SpreadsheetGrid` already uses it; call it directly only for custom presentation.
+
+## Address helpers
+
+```ts
+import { addressToLabel, columnIndexToLabel, labelToAddress } from '@spreadish/react';
+
+columnIndexToLabel(0); // A
+columnIndexToLabel(26); // AA
+addressToLabel({ row: 11, column: 1 }); // B12
+labelToAddress('B12'); // { row: 11, column: 1 }
+```
+
+Invalid labels and negative column indexes throw.
+
+## Display formatting
+
+```ts
+import { formatCellDisplay } from '@spreadish/react';
+
+const cell = workbook.getCell(sheetId, row, column);
+const style = workbook.resolveCellStyle(sheetId, row, column);
+const text = formatCellDisplay(cell, style);
+```
+
+For formula cells, this returns the computed value rather than formula source.
+
+## Style helpers
+
+```tsx
+import {
+    borderEdgeToCss,
+    cellStyleToCss,
+    DEFAULT_BORDER_COLOR,
+    FILL_VARIABLE,
+} from '@spreadish/react';
+
+const css = cellStyleToCss(workbook.resolveCellStyle(sheetId, row, column));
+```
+
+`cellStyleToCss` returns `CSSProperties` suitable for a cell container.
+
+## Viewport helpers
+
+```ts
+import { buildVisibleIndices, isCoordInRanges } from '@spreadish/react';
+```
+
+These helpers are useful when building custom headers or viewport behavior around the grid.
+
+## Pitfalls
+
+- The grid needs a bounded-height parent.
+- Import `styles.css` exactly once.
+- Re-render after workbook events; the workbook is not React state.
+- Keep callbacks stable where practical.
+- Increment `layoutVersion` after changing measured dimensions.
+- Do not mount a second keyboard hook around `SpreadsheetGrid`.
+- Browser clipboard reads and writes can be denied.
+- Use core commands instead of mutating data in callbacks.
+
+## Guides
+
+- [React renderer](/docs/react)
+- [Getting started](/docs/getting-started)
+- [Integration recipes](/docs/recipes)
+- [Playground](/playground)

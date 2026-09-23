@@ -1,0 +1,44 @@
+{
+    "name": "@spreadish/utils",
+    "version": "0.0.0",
+    "description": "Shared pure helpers for Spreadish packages.",
+    "license": "MIT",
+    "author": "Spreadish contributors",
+    "homepage": "https://spreadish.aitistack.com/docs/api/utils",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/aitistack/spreadish.git",
+        "directory": "packages/spreadsheet-utils"
+    },
+    "bugs": {
+        "url": "https://github.com/aitistack/spreadish/issues"
+    },
+    "keywords": [
+        "spreadsheet",
+        "spreadish",
+        "utils"
+    ],
+    "type": "module",
+    "sideEffects": false,
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "LICENSE",
+        "README.md"
+    ],
+    "publishConfig": {
+        "access": "public",
+        "provenance": true
+    },
+    "scripts": {
+        "build": "vite build && tsc -p tsconfig.build.json --emitDeclarationOnly",
+        "typecheck": "tsc -p tsconfig.json --noEmit",
+        "prepack": "bun run build"
+    }
+}

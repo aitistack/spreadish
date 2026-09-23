@@ -1,0 +1,254 @@
+# Architecture
+
+Spreadish separates workbook truth, formula evaluation, rendering, and persistence. The split keeps core behavior testable without a browser and prevents application state from drifting away from the spreadsheet document.
+
+<Callout tone="important" title="Non-negotiable">
+    Canonical workbook state lives in <code>@spreadish/core</code>. React presents. Sometic
+    persists. Do not invent a parallel state library for the document.
+</Callout>
+
+A host application constructs or restores a workbook, renders it with React, dispatches commands, and optionally persists serialized snapshots through Sometic.
+
+## Package map
+
+```text
+@spreadish/formula-engine ─┐
+                          ├─> @spreadish/core ─> @spreadish/react
+@spreadish/utils ──────────┘                  └─> @spreadish/sometic
+
+@spreadish/testing ─────────────> test code only
+```
+
+Dependencies must not point back upward. Circular package imports are forbidden.
+
+## Responsibilities by package
+
+| Package                     | Owns                                                                       | Does not own                          |
+| --------------------------- | -------------------------------------------------------------------------- | ------------------------------------- |
+| `@spreadish/utils`          | Pure shared helpers and branded utility types                              | Workbook behavior, React, persistence |
+| `@spreadish/formula-engine` | Lexer, parser, AST, evaluator, functions, dependency analysis              | Workbook state, UI, storage           |
+| `@spreadish/core`           | Sparse workbook, commands, history, formulas, serialization, import/export | React rendering, Sometic stores       |
+| `@spreadish/react`          | Virtualized rendering and browser interaction                              | Canonical workbook state              |
+| `@spreadish/sometic`        | Persistence, sessions, workspaces, Sometic adapters                        | Private workbook mutation             |
+| `@spreadish/testing`        | Reusable test support                                                      | Production runtime behavior           |
+
+## The host composition
+
+A typical application composes the packages at its boundary:
+
+```ts
+import { createWorkbook } from '@spreadish/core';
+import { createWorkbookSession, isPersistableDomainEvent } from '@spreadish/sometic';
+
+const workbook = createWorkbook({
+    name: 'Operations',
+    sheetName: 'Sheet 1',
+});
+
+const session = createWorkbookSession({
+    storage,
+    sync,
+    key: 'workbook.operations',
+    workbookId: workbook.id,
+});
+
+workbook.subscribe((event) => {
+    if (isPersistableDomainEvent(event)) {
+        void session.commitSerialized(workbook.serialize());
+    }
+});
+```
+
+The live `Workbook` remains the authority for document behavior. Sometic stores durable snapshots and workspace state; it does not reach into core's private maps.
+
+## Sparse by contract
+
+A sheet does not contain a rectangular array for every possible coordinate. It stores axis identity and occupied records:
+
+```text
+WorkbookState
+  sheetOrder: SheetId[]
+  sheets: Map<SheetId, Sheet>
+
+Sheet
+  rowOrder: RowId[]
+  columnOrder: ColumnId[]
+  rows: Map<RowId, RowMeta>
+  columns: Map<ColumnId, ColumnMeta>
+  cells: Map<RowId + ColumnId, CellRecord>
+```
+
+An empty coordinate usually has no cell record. The row and column axes still make the coordinate addressable.
+
+This distinction matters for large sheets. Writing to a distant coordinate must not allocate every cell between the origin and that coordinate.
+
+A temporary rectangular value array may appear during bounded clipboard or CSV processing. It is an interchange representation, not canonical workbook state.
+
+## Identity is separate from display order
+
+Row index `3` means “the row currently displayed in the fourth position.” It is not persistent identity.
+
+Each row and column has a stable ID. Separate order arrays determine the current visual position:
+
+```text
+rowOrder:    [row_a, row_c, row_b]
+columnOrder: [col_a, col_b, col_d]
+```
+
+Moving a row changes `rowOrder`; it does not invent a replacement identity. This allows formatting, cell records, history, and persistence to remain attached to the correct axis.
+
+The same rule applies to workbooks and sheets: use stable IDs for identity and order arrays for presentation.
+
+## Commands define mutation
+
+Hosts mutate document state through `workbook.execute(command)`:
+
+```ts
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 1,
+    value: '=A1*2',
+});
+```
+
+A command validates intent, updates state, recalculates formulas when needed, records history when relevant, and emits domain events.
+
+Direct mutation would bypass those guarantees. UI callbacks, drag-and-drop handlers, import controls, and toolbar actions must all dispatch commands.
+
+## Reads, events, and subscriptions
+
+The workbook exposes read methods separately from mutation:
+
+```ts
+const state = workbook.getState();
+const sheet = workbook.getSheet(sheetId);
+const cell = workbook.getCell(sheetId, 0, 0);
+const selection = workbook.getSelection();
+
+const unsubscribe = workbook.subscribe((event) => {
+    console.log(event.type);
+});
+```
+
+Subscribers receive domain events, not browser events. React can use a subscription to request a render, while persistence can filter for document-changing events.
+
+Always call the returned unsubscribe function when a host no longer needs the listener.
+
+## History belongs to core
+
+Undo and redo operate on workbook transactions:
+
+```ts
+if (workbook.canUndo()) {
+    workbook.undo();
+}
+
+if (workbook.canRedo()) {
+    workbook.redo();
+}
+```
+
+A document command should produce one understandable undo step. Importing a grid, moving an axis, or applying a range format should not require users to undo each affected cell separately.
+
+Ephemeral UI state does not need to enter document history. An editor draft may remain temporary until commit, while the committed value becomes a history entry.
+
+## React is a projection
+
+`@spreadish/react` receives a workbook and renders the visible region. Virtualization means most logical cells are not mounted in the DOM.
+
+Correctness therefore cannot depend on a component being mounted. Formula recalculation, selection, history, import, export, and persistence all operate independently of rendering.
+
+React may own:
+
+- Open menus
+- Formula-bar drafts
+- Pointer state
+- Viewport measurements
+- Theme and zoom controls
+- Focus restoration
+
+React must not own:
+
+- The canonical cell map
+- Sheet order
+- Row or column identity
+- Formula results
+- Undo and redo stacks
+- Serialized workbook truth
+
+## Sometic owns application persistence
+
+The official persistence layer is `@spreadish/sometic`. It integrates Spreadish snapshots with Sometic storage, query, and workspace primitives.
+
+Do not add Zustand, TanStack Query, Redux, or a parallel cache. Multiple state systems create competing authorities and make reload and synchronization behavior ambiguous.
+
+Persist serialized snapshots rather than private class internals:
+
+```ts
+const snapshot = workbook.serialize();
+await session.commitSerialized(snapshot);
+```
+
+After hydration, restore through core:
+
+```ts
+import { loadWorkbook } from '@spreadish/core';
+
+const workbook = loadWorkbook(snapshot);
+```
+
+## Formula isolation
+
+`@spreadish/formula-engine` treats formulas as a language with tokens, an AST, and explicit evaluation rules. It never executes input as JavaScript.
+
+Core supplies cell values, tracks dependencies, detects cycles, and writes computed values back to cell records while preserving formula text.
+
+This boundary provides three guarantees:
+
+1. Formula behavior can be tested without React.
+2. Imported formulas cannot execute arbitrary JavaScript.
+3. Workbook commands remain the entry point for recalculation.
+
+## Serialization boundary
+
+`workbook.serialize()` produces a versioned, JSON-safe representation. `loadWorkbook` restores a validated snapshot.
+
+Runtime maps and branded IDs are implementation details; consumers should not manually reconstruct them. Treat serialized data as an interchange contract and untrusted imported data as hostile until validation succeeds.
+
+For user-selected files, prefer the guarded import helpers described in [Import and export](/docs/import-export).
+
+## Common architectural mistakes
+
+### Mirroring all cells in React state
+
+This creates two sources of truth and makes undo, formulas, and persistence inconsistent. Keep the workbook authoritative and subscribe for renders.
+
+### Persisting every UI event
+
+Selection movement, clipboard state, and draft keystrokes can create unnecessary writes. Persist events that represent durable document changes.
+
+### Using indexes as IDs
+
+Indexes change after insert, delete, and move operations. Persist stable IDs and derive indexes from order arrays.
+
+### Calling formula code directly from a component
+
+Set formulas through `setCellValue`. Core then owns dependency updates, recalculation, history, and events.
+
+### Mutating an imported plan manually
+
+Apply plans through a core command such as `importSheetGrid` so validation and undo behavior remain intact.
+
+### Adding another application store
+
+The official integration uses Sometic through `@spreadish/sometic`. A second query or state library creates duplicated caching and lifecycle rules.
+
+## Next
+
+- [Core model](/docs/core-model)
+- [React renderer](/docs/react)
+- [Persistence and workspaces](/docs/persistence)
+- [Formulas](/docs/formulas)
+- [Contributing](/docs/contributing)

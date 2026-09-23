@@ -1,0 +1,33 @@
+name: Release PR
+
+on:
+    push:
+        branches: [main]
+
+permissions:
+    contents: write
+    pull-requests: write
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - run: bun install --frozen-lockfile
+
+            # Opens/updates the Version Packages PR from pending changesets.
+            # Publishing happens after that PR merges and a GitHub Release is cut
+            # (see publish.yml + docs/11-release-and-npm.md).
+            - uses: changesets/action@v1
+              with:
+                  version: bun run version-packages
+                  publish: ''
+                  title: 'chore: version packages'
+                  commit: 'chore: version packages'
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -9,10 +9,10 @@ Start with the public guides:
 
 ## Branches
 
-| Branch | Role |
-| ------ | ---- |
-| `main` | Stable / release line. Initially community files only (`README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE`). |
-| `development` | Integration line. Full monorepo lands here first; merge to `main` when ready. |
+| Branch        | Role                                                                                                              |
+| ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `main`        | Stable / release line. Initially community files only (`README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE`). |
+| `development` | Integration line. Full monorepo lands here first; merge to `main` when ready.                                     |
 
 Bootstrap the full tree on `development`:
 

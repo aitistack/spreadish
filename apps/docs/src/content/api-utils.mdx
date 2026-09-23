@@ -1,0 +1,127 @@
+# `@spreadish/utils`
+
+Small, pure TypeScript helpers shared by Spreadish packages. This package has no React or Sometic dependency.
+
+Most applications do not need it directly.
+
+## Install
+
+<InstallTabs packages="@spreadish/utils" />
+
+## `createIdFactory`
+
+Create IDs with a stable prefix:
+
+<SnippetPreview
+  title="Prefixed IDs"
+  language="ts"
+  code={`import { createIdFactory } from '@spreadish/utils'
+
+const nextRowId = createIdFactory('row')
+
+const first = nextRowId()
+const second = nextRowId()
+// row*<uuid>
+// row*<different-uuid>`}
+/>
+
+Inject a deterministic random source in tests:
+
+```ts
+const values = ['one', 'two'];
+const nextId = createIdFactory('cell', () => values.shift()!);
+
+nextId(); // cell_one
+nextId(); // cell_two
+```
+
+The returned `IdFactory` has the signature `() => string`.
+
+## `assertNever`
+
+Use `assertNever` to enforce exhaustive discriminated-union handling:
+
+```ts
+import { assertNever } from '@spreadish/utils';
+
+type Status = 'idle' | 'saving' | 'saved';
+
+function label(status: Status): string {
+    switch (status) {
+        case 'idle':
+            return 'Idle';
+        case 'saving':
+            return 'Saving';
+        case 'saved':
+            return 'Saved';
+        default:
+            return assertNever(status);
+    }
+}
+```
+
+Adding a new union member produces a type error until the switch handles it.
+
+## `isPlainObject`
+
+```ts
+import { isPlainObject } from '@spreadish/utils';
+
+isPlainObject({ name: 'Sheet 1' }); // true
+isPlainObject([]); // false
+isPlainObject(null); // false
+```
+
+This is a structural guard for non-null, non-array objects. It does not validate a domain schema.
+
+## `rejectDangerousKeys`
+
+Reject prototype-related keys while validating untrusted records:
+
+```ts
+import { isPlainObject, rejectDangerousKeys } from '@spreadish/utils';
+
+const parsed: unknown = JSON.parse(input);
+
+if (!isPlainObject(parsed)) {
+    throw new Error('Expected an object');
+}
+
+rejectDangerousKeys(parsed, 'import payload');
+```
+
+The helper rejects `__proto__`, `prototype`, and `constructor`.
+
+Call it recursively when nested records are also untrusted. For workbook files, prefer the complete import validation provided by `@spreadish/core`.
+
+## `Brand`
+
+`Brand` creates nominal-looking TypeScript identifiers without runtime overhead:
+
+```ts
+import type { Brand } from '@spreadish/utils';
+
+type ProjectId = Brand<string, 'ProjectId'>;
+type UserId = Brand<string, 'UserId'>;
+
+function openProject(id: ProjectId) {
+    // ...
+}
+```
+
+Brands improve compile-time separation but do not validate external strings at runtime.
+
+## Pitfalls
+
+- Default ID generation requires `crypto.randomUUID()`.
+- A deterministic ID source must still return unique values.
+- `isPlainObject` is not a schema validator.
+- `rejectDangerousKeys` checks one record level at a time.
+- `Brand` has no runtime representation.
+- Application code should usually import workbook identifiers from `@spreadish/core`.
+
+## Guides
+
+- [Architecture](/docs/architecture)
+- [Core model](/docs/core-model)
+- [`@spreadish/core` API](/docs/api/core)

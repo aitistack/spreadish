@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://spreadish.aitistack.com/sitemap.xml

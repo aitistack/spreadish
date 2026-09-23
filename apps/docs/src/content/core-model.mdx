@@ -1,0 +1,334 @@
+# Core model
+
+`@spreadish/core` is the framework-independent workbook engine. It owns sparse sheets, cells, selection, editing, commands, history, formatting, formulas, serialization, and import/export integration.
+
+The key rule is simple: read through workbook methods and mutate through `workbook.execute`.
+
+## Create a workbook
+
+```ts
+import { createWorkbook } from '@spreadish/core';
+
+const workbook = createWorkbook({
+    name: 'Quarterly plan',
+    sheetName: 'Forecast',
+});
+
+const sheetId = workbook.getState().activeSheetId!;
+```
+
+A workbook starts with stable identity and a versioned state shape. Names are display labels; they are not IDs.
+
+## Sparse sheets
+
+A sheet stores:
+
+- Stable row IDs and a `rowOrder` array
+- Stable column IDs and a `columnOrder` array
+- Sparse row and column metadata maps
+- Sparse cell records
+- Conditional formatting rules
+
+An untouched coordinate does not need a `CellRecord`. Reading one returns `undefined`:
+
+```ts
+const empty = workbook.getCell(sheetId, 20, 10);
+// undefined
+```
+
+Writing a distant coordinate remains valid without materializing every intervening cell:
+
+```ts
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 500,
+    column: 100,
+    value: 'Sparse',
+});
+```
+
+Do not turn the state into a dense matrix for convenience. For rendering, request only the visible region.
+
+## Identity and order
+
+Rows and columns have stable IDs. Their numeric indexes are current positions in order arrays.
+
+If a row moves from index `2` to index `8`, its ID remains the same. Cell records and row metadata continue to refer to the stable identity.
+
+Use indexes when expressing an immediate command or screen coordinate. Use IDs when persisting identity or associating durable metadata.
+
+## Cell records
+
+A cell may hold:
+
+- A normalized string, number, boolean, empty, or error value
+- Formula source text
+- A style ID
+- Metadata
+
+Write values through `setCellValue`:
+
+```ts
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 0,
+    value: 42,
+});
+
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 1,
+    value: '=A1*2',
+});
+```
+
+Clear a cell by setting `null` or by using an appropriate clearing command:
+
+```ts
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 0,
+    value: null,
+});
+```
+
+Formula cells preserve the formula string and store the current computed value. Consumers should not calculate and overwrite formula results themselves.
+
+## Commands
+
+Commands are explicit objects interpreted by the workbook.
+
+| Area       | Representative commands                                                                 |
+| ---------- | --------------------------------------------------------------------------------------- |
+| Cells      | `setCellValue`, `clearCells`, `importSheetGrid`                                         |
+| Sheets     | `createSheet`, `renameSheet`, `moveSheet`, `deleteSheet`, `activateSheet`               |
+| Selection  | `selectCell`, `selectRange`, `selectRows`, `selectColumns`, `selectAll`                 |
+| Axes       | `insertRows`, `deleteRows`, `moveRows`, `insertColumns`, `deleteColumns`, `moveColumns` |
+| Editing    | `startEditing`, editor draft commands, commit and cancel commands                       |
+| Clipboard  | Copy, cut, paste, and autofill commands                                                 |
+| Formatting | Style patch and conditional-format commands                                             |
+| Workbook   | `renameWorkbook`                                                                        |
+
+Check whether a command changed state:
+
+```ts
+const result = workbook.execute({
+    type: 'renameSheet',
+    sheetId,
+    name: 'Revenue',
+});
+
+if (result.applied) {
+    console.log(result.events);
+}
+```
+
+A valid no-op may return `applied: false`. Hosts should not assume every command creates a history entry or persistence write.
+
+## Insert axes before addressing them
+
+A workbook creates axis order as coordinates become needed, and hosts can also insert explicit rows and columns:
+
+```ts
+workbook.execute({
+    type: 'insertRows',
+    sheetId,
+    index: 0,
+    count: 20,
+});
+
+workbook.execute({
+    type: 'insertColumns',
+    sheetId,
+    index: 0,
+    count: 12,
+});
+```
+
+Validate boundary behavior when inserting, deleting, or moving axes. Important cases include the first position, last position, empty axes, repeated moves, and moves onto the current position.
+
+## Selection and editor state
+
+Selection belongs to the workbook because keyboard commands, clipboard behavior, formatting, and rendering all depend on the same state.
+
+```ts
+workbook.execute({
+    type: 'selectRange',
+    sheetId,
+    start: { row: 0, column: 0 },
+    end: { row: 4, column: 2 },
+});
+
+const selection = workbook.getSelection();
+```
+
+Editor state is separate from committed cell state. A formula-bar draft can change without mutating the document until the user commits it.
+
+That separation prevents each keystroke from becoming a persistence write or undo entry.
+
+## History
+
+Document mutations create undo and redo history when they apply:
+
+```ts
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 0,
+    value: 'First',
+});
+
+workbook.undo();
+workbook.redo();
+```
+
+Use `canUndo()` and `canRedo()` to drive controls:
+
+```ts
+const undoDisabled = !workbook.canUndo();
+const redoDisabled = !workbook.canRedo();
+```
+
+`clearHistory()` drops history without changing document state. It is useful after seeding a new workbook or establishing a restored snapshot as the session baseline:
+
+```ts
+workbook.clearHistory();
+```
+
+Pitfalls to test:
+
+- Undo when no entry exists
+- Redo after undo
+- A new mutation after undo
+- No-op commands
+- A multi-cell mutation as one undo step
+- Formula recalculation restored with the originating edit
+- Reload behavior and the intended history baseline
+
+## Domain events
+
+Subscribe to domain changes:
+
+```ts
+const unsubscribe = workbook.subscribe((event) => {
+    if (event.type === 'transactionCommitted') {
+        console.log(event.commandType);
+    }
+});
+
+// Later
+unsubscribe();
+```
+
+Use events to request React renders or trigger filtered persistence. Do not mutate workbook internals from a listener.
+
+Not every event is durable. Selection and editor events should not necessarily cause storage writes.
+
+## Serialization and restoration
+
+Serialize the document to a JSON-safe, versioned snapshot:
+
+```ts
+const snapshot = workbook.serialize();
+```
+
+Restore through core:
+
+```ts
+import { loadWorkbook } from '@spreadish/core';
+
+const restored = loadWorkbook(snapshot);
+restored.clearHistory();
+```
+
+Do not persist runtime `Map` objects or clone private fields manually. The serialized shape is the supported boundary.
+
+For untrusted JSON text selected by a user, use `importWorkbookJson`, which applies import limits and wraps validation failures in `ImportError`.
+
+## Clone versus serialize
+
+`workbook.clone()` creates another workbook instance from the current document state. Serialization creates a portable data representation.
+
+Use cloning for isolated in-memory work. Use serialization for storage, downloads, migrations, and process boundaries.
+
+In either case, verify that IDs, sparse cells, formulas, styles, and sheet order survive the round trip.
+
+## Worked example
+
+<SnippetPreview
+  title="Create, seed, subscribe, and restore"
+  description="All writes go through commands; the saved snapshot restores through core."
+  language="ts"
+  code={`import { createWorkbook, loadWorkbook } from '@spreadish/core'
+
+const workbook = createWorkbook({
+name: 'Demo',
+sheetName: 'Sheet 1',
+})
+
+const sheetId = workbook.getState().activeSheetId!
+
+const unsubscribe = workbook.subscribe((event) => {
+console.log(event.type)
+})
+
+workbook.execute({
+type: 'setCellValue',
+sheetId,
+row: 0,
+column: 0,
+value: 10,
+})
+
+workbook.execute({
+type: 'setCellValue',
+sheetId,
+row: 0,
+column: 1,
+value: '=A1\*2',
+})
+
+const snapshot = workbook.serialize()
+const restored = loadWorkbook(snapshot)
+
+unsubscribe()
+restored.clearHistory()`}
+/>
+
+## Common pitfalls
+
+### Mutating returned state
+
+Treat values returned by `getState`, `getSheet`, and `getCell` as read-only. Use commands to change them.
+
+### Keeping a second cell matrix
+
+A mirrored matrix will drift after formulas, row moves, undo, or imports. The workbook is the source of truth.
+
+### Persisting indexes as identity
+
+A stored index may point to a different row after reordering. Persist stable IDs where identity matters.
+
+### Assuming every command applies
+
+Repeated values, invalid intents, and boundary operations may be no-ops. Inspect `ExecuteResult`.
+
+### Persisting transient state
+
+Selection, clipboard data, and editor drafts are session concerns unless your application explicitly chooses otherwise.
+
+## Next
+
+- [Formulas](/docs/formulas)
+- [Import and export](/docs/import-export)
+- [React renderer](/docs/react)
+- [Persistence and workspaces](/docs/persistence)
+- [`@spreadish/core` API](/docs/api/core)

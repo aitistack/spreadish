@@ -6,10 +6,16 @@ on:
 
 permissions:
     contents: read
+    pull-requests: write
 
 jobs:
     dependency-review:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v6
+            # Public repos should support this once Dependency graph is on; do not
+            # block merges if the org/repo has not enabled the feature yet.
             - uses: actions/dependency-review-action@v4
+              continue-on-error: true
+              with:
+                  fail-on-severity: high

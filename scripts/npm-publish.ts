@@ -86,10 +86,13 @@ async function main(): Promise<void> {
             const next: Pkg = {
                 ...pkg,
                 publishConfig,
-                dependencies: rewriteWorkspace(pkg.dependencies, versionsByName),
-                peerDependencies: rewriteWorkspace(pkg.peerDependencies, versionsByName),
-                optionalDependencies: rewriteWorkspace(pkg.optionalDependencies, versionsByName),
             };
+            const deps = rewriteWorkspace(pkg.dependencies, versionsByName);
+            if (deps) next.dependencies = deps;
+            const peers = rewriteWorkspace(pkg.peerDependencies, versionsByName);
+            if (peers) next.peerDependencies = peers;
+            const optionals = rewriteWorkspace(pkg.optionalDependencies, versionsByName);
+            if (optionals) next.optionalDependencies = optionals;
             // Keep monorepo-only workspace refs out of the published artifact.
             await writeFile(file, `${JSON.stringify(next, null, 4)}\n`);
             console.log(`rewrote ${pkg.name}@${pkg.version}`);

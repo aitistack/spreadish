@@ -1,6 +1,6 @@
 {
     "name": "@spreadish/react",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Virtualized React spreadsheet grid for Spreadish.",
     "license": "MIT",
     "author": "Spreadish contributors",
@@ -45,8 +45,7 @@
     },
     "scripts": {
         "build": "vite build && tsc -p tsconfig.build.json --emitDeclarationOnly",
-        "typecheck": "tsc -p tsconfig.json --noEmit",
-        "prepack": "bun run build"
+        "typecheck": "tsc -p tsconfig.json --noEmit"
     },
     "peerDependencies": {
         "react": "^19.1.1",

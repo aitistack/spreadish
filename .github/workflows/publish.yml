@@ -38,9 +38,9 @@ jobs:
             - run: bun run package:check
             - run: bun run package:smoke
 
-            # npm Trusted Publishing via GitHub Actions OIDC (no long-lived token).
-            # Configure each package's Trusted Publisher to this workflow + npm-production.
+            # Rewrites workspace:* → concrete versions, then npm publish (ignore-scripts).
+            # Prefer this over raw `changeset publish` for Bun workspace protocol safety.
             - name: Publish packages
-              run: bunx changeset publish
+              run: bun run scripts/npm-publish.ts
               env:
                   NPM_CONFIG_PROVENANCE: true

@@ -1,6 +1,6 @@
 {
     "name": "@spreadish/formula-engine",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Lexer, parser, AST, and evaluator for Spreadish formulas (no eval).",
     "license": "MIT",
     "author": "Spreadish contributors",
@@ -39,7 +39,6 @@
     },
     "scripts": {
         "build": "vite build && tsc -p tsconfig.build.json --emitDeclarationOnly",
-        "typecheck": "tsc -p tsconfig.json --noEmit",
-        "prepack": "bun run build"
+        "typecheck": "tsc -p tsconfig.json --noEmit"
     }
 }

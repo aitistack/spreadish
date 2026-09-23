@@ -1,5 +1,4 @@
 ---
-'@spreadish/testing': minor
 '@spreadish/react': patch
 ---
 

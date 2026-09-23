@@ -302,8 +302,25 @@ async function generateOgImage(page: SitePage, outPath: string, iconBuffer: Buff
 async function generateOgImages(): Promise<void> {
     const ogDir = path.join(publicDir, 'og');
     await mkdir(ogDir, { recursive: true });
-    const iconPath = path.join(docsRoot, '../../icon.png');
-    const iconBuffer = Buffer.from(await readFile(iconPath));
+    // Prefer the committed docs asset; root /icon.png is agent-only and gitignored.
+    const iconCandidates = [
+        path.join(docsRoot, 'src/assets/icon.png'),
+        path.join(docsRoot, '../../icon.png'),
+    ];
+    let iconBuffer: Buffer | null = null;
+    for (const candidate of iconCandidates) {
+        try {
+            iconBuffer = Buffer.from(await readFile(candidate));
+            break;
+        } catch {
+            // try next
+        }
+    }
+    if (!iconBuffer) {
+        throw new Error(
+            `generate-seo: missing brand icon (tried ${iconCandidates.join(', ')})`,
+        );
+    }
 
     for (const page of SITE_PAGES) {
         const slug = ogSlug(page);

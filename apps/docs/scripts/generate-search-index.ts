@@ -101,11 +101,11 @@ const SOURCES: ContentSource[] = [
 ];
 
 function slugifyHeading(raw: string): string {
+    // Whitelist only — avoid incomplete multi-character HTML-tag sanitization.
     return raw
         .toLowerCase()
         .trim()
         .replace(/[`*_~]/g, '')
-        .replace(/<[^>]+>/g, '')
         .replace(/\{[^}]*\}/g, '')
         .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-')

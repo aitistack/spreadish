@@ -33,6 +33,18 @@ const PROHIBITED_DEPENDENCIES = [
 /** Public package surfaces must not point consumers at agent-only paths. */
 const FORBIDDEN_PUBLIC_REF = /AGENTS\.md|\.cursor\/|docs\/\d{2}-/;
 
+const PUBLIC_DOCS_HOST = 'spreadish.aitistack.com';
+
+/** True when homepage is exactly the docs origin or a path under that host (not a prefix spoof). */
+function isPublicDocsHomepage(homepage: string): boolean {
+    try {
+        const url = new URL(homepage);
+        return url.protocol === 'https:' && url.hostname === PUBLIC_DOCS_HOST;
+    } catch {
+        return false;
+    }
+}
+
 type PackageJson = {
     name?: string;
     private?: boolean;
@@ -109,8 +121,7 @@ for (const dir of packageDirs) {
         );
         assert(pkg.repository, `${pkg.name} must declare repository`);
         assert(
-            typeof pkg.homepage === 'string' &&
-                pkg.homepage.startsWith('https://spreadish.aitistack.com'),
+            typeof pkg.homepage === 'string' && isPublicDocsHomepage(pkg.homepage),
             `${pkg.name} homepage must point at the public docs site`,
         );
         assert(

@@ -198,16 +198,56 @@ export function HomePage() {
                 </section>
 
                 <section className="mx-auto max-w-6xl border-b border-[var(--pg-border)] px-4 py-16">
-                    <h2 className="spreadish-section-title text-2xl text-[var(--pg-text)]">
-                        Tired of bolting a grid onto a dense matrix?
-                    </h2>
-                    <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-[var(--pg-muted)]">
-                        Most spreadsheet UIs treat empty space like data. You pay for it in memory,
-                        undo stacks, and brittle indexes. Spreadish keeps a sparse document: only
-                        the cells, rows, and columns that exist. Indexes are display positions.
-                        Identity lives in stable IDs. Empty cells stay addressable without inventing
-                        a wall of nulls.
-                    </p>
+                    <div className="grid w-full gap-8 md:grid-cols-[minmax(0,13fr)_minmax(0,7fr)] md:items-center md:gap-10">
+                        <div className="min-w-0">
+                            <h2 className="spreadish-section-title text-2xl text-[var(--pg-text)] md:text-[1.75rem]">
+                                Tired of bolting a grid onto a dense matrix?
+                            </h2>
+                            <p className="mt-3 text-[15px] leading-relaxed text-[var(--pg-muted)]">
+                                Most spreadsheet UIs treat empty space like data. You pay for it in
+                                memory, undo stacks, and brittle indexes. Spreadish keeps a sparse
+                                document: only the cells, rows, and columns that exist. Indexes are
+                                display positions. Identity lives in stable IDs. Empty cells stay
+                                addressable without inventing a wall of nulls.
+                            </p>
+                        </div>
+                        <aside
+                            className="min-w-0 rounded-[12px] border border-[var(--pg-border)] bg-white p-5 shadow-[0_4px_16px_rgb(15_23_42_/_5%)]"
+                            aria-label="Sparse model at a glance"
+                        >
+                            <p className="text-[12px] font-semibold tracking-wide text-[var(--pg-accent-hover)] uppercase">
+                                Sparse by default
+                            </p>
+                            <ul className="mt-4 space-y-3">
+                                {[
+                                    {
+                                        label: 'Stored',
+                                        value: 'Only cells that exist',
+                                    },
+                                    {
+                                        label: 'Index',
+                                        value: 'Display order, not identity',
+                                    },
+                                    {
+                                        label: 'Empty',
+                                        value: 'Addressable. Never materialized!',
+                                    },
+                                ].map((row) => (
+                                    <li
+                                        key={row.label}
+                                        className="flex items-start gap-3 border-t border-[var(--pg-border)] pt-3 first:border-t-0 first:pt-0"
+                                    >
+                                        <span className="mt-0.5 inline-flex h-6 min-w-16 items-center justify-center rounded-[6px] bg-[var(--pg-accent-soft)] px-2 font-mono text-[11px] font-semibold text-[var(--pg-accent-hover)]">
+                                            {row.label}
+                                        </span>
+                                        <span className="text-[14px] leading-snug text-[var(--pg-text)]">
+                                            {row.value}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </aside>
+                    </div>
                 </section>
 
                 <section className="mx-auto max-w-6xl border-b border-[var(--pg-border)] px-4 py-16">

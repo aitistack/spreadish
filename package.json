@@ -28,6 +28,7 @@
         "package:check": "bun run scripts/package-check.ts",
         "package:smoke": "bun run scripts/package-smoke.ts",
         "package:registry-smoke": "bun run scripts/package-registry-smoke.ts",
+        "package:publish": "bun run scripts/npm-publish.ts",
         "benchmark": "bun run scripts/benchmark.ts",
         "bundle:report": "bun run scripts/bundle-report.ts",
         "audit:deps": "bun run scripts/dependency-audit.ts",

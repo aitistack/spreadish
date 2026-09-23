@@ -1,6 +1,6 @@
 {
     "name": "@spreadish/core",
-    "version": "0.0.0",
+    "version": "0.1.0",
     "description": "Framework-independent sparse spreadsheet workbook engine for Spreadish.",
     "license": "MIT",
     "author": "Spreadish contributors",

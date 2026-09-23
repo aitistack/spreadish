@@ -9,22 +9,11 @@ Start with the public guides:
 
 ## Branches
 
-| Branch        | Role                                                                                                              |
-| ------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `main`        | Stable / release line. Initially community files only (`README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE`). |
-| `development` | Integration line. Full monorepo lands here first; merge to `main` when ready.                                     |
+| Branch | Role                                      |
+| ------ | ----------------------------------------- |
+| `main` | Stable / release line. Day-to-day target. |
 
-Bootstrap the full tree on `development`:
-
-```bash
-cp .gitignore.development .gitignore
-git checkout -b development
-git add -A
-git commit -m "chore: import monorepo onto development"
-git push -u origin development
-```
-
-Day-to-day: open feature PRs into `development`. Promote with a PR from `development` → `main`.
+Work lands on `main` (direct push for maintainers, or a focused PR into `main`). Prefer short-lived branches (`feature/*`, `fix/*`, `docs/*`, …) when you want review before merge.
 
 ## Local commands
 
@@ -51,5 +40,4 @@ Use Bun only — do not use npm, pnpm, or yarn for project dependency management
 
 All PRs must pass required checks and receive review before merge. Package behavior changes need a changeset.
 
-Required checks on `development`: **Development** (basic), **CI**, **E2E**, **PR Title**, **Dependency Review**.
-Required checks on `main` (after monorepo merge): **CI**, **E2E**, plus release workflows as configured.
+Required checks on `main`: **CI**, **E2E**, **PR Title**, **Dependency Review**, plus release workflows as configured.

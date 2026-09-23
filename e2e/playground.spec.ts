@@ -48,7 +48,7 @@ test.describe('Phase 02 selection and editing', () => {
         await expect(editor).toBeVisible();
         await editor.fill('Phase02');
         await editor.press('Enter');
-        await expect(grid.getByText('Phase02')).toBeVisible();
+        await expect(grid.getByRole('cell', { name: 'B2', exact: true })).toHaveText('Phase02');
         await expect(grid.getByRole('cell', { name: 'B3', exact: true })).toHaveAttribute(
             'data-selected',
             'true',

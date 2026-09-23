@@ -27,7 +27,8 @@ export default defineConfig({
             name: 'chromium',
             use: { ...devices['Desktop Chrome'] },
         },
-        ...(process.env.CI || process.env.E2E_BROWSER_MATRIX === '1'
+        // Full browser matrix is opt-in; chromium gates merges by default.
+        ...(process.env.E2E_BROWSER_MATRIX === '1'
             ? [
                   {
                       name: 'firefox',

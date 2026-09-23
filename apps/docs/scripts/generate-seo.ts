@@ -317,9 +317,7 @@ async function generateOgImages(): Promise<void> {
         }
     }
     if (!iconBuffer) {
-        throw new Error(
-            `generate-seo: missing brand icon (tried ${iconCandidates.join(', ')})`,
-        );
+        throw new Error(`generate-seo: missing brand icon (tried ${iconCandidates.join(', ')})`);
     }
 
     for (const page of SITE_PAGES) {

@@ -39,8 +39,11 @@ jobs:
             - run: bun run package:smoke
 
             # Rewrites workspace:* → concrete versions, then npm publish (ignore-scripts).
-            # Prefer this over raw `changeset publish` for Bun workspace protocol safety.
+            # Requires repo secret NPM_TOKEN = npm Bypass-2FA granular token with publish
+            # on @spreadish/*. OIDC Trusted Publishing alone currently returns E404.
             - name: Publish packages
               run: bun run scripts/npm-publish.ts
               env:
-                  NPM_CONFIG_PROVENANCE: true
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+                  NPM_CONFIG_PROVENANCE: 'false'

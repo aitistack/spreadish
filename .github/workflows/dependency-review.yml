@@ -12,7 +12,7 @@ jobs:
     dependency-review:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             # Public repos should support this once Dependency graph is on; do not
             # block merges if the org/repo has not enabled the feature yet.
             - uses: actions/dependency-review-action@v4

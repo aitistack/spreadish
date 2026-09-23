@@ -137,7 +137,7 @@ export function SiteHeader() {
                             <CopyPromptButton variant="header" className="ml-1" />
                         ) : null}
                         <a
-                            href="https://github.com/aitistack/spreadsheet-engine"
+                            href="https://github.com/aitistack/spreadish"
                             className={`${headerControl} ml-1 w-9 bg-[#24292f] text-white hover:bg-[#1b1f23]`}
                             rel="noreferrer"
                             target="_blank"
@@ -207,7 +207,7 @@ export function SiteHeader() {
                         })}
                         {showCopyPrompt ? <CopyPromptButton variant="menu" /> : null}
                         <a
-                            href="https://github.com/aitistack/spreadsheet-engine"
+                            href="https://github.com/aitistack/spreadish"
                             className="inline-flex items-center gap-2 rounded-[10px] bg-[#24292f] px-3 py-2.5 text-[14px] font-medium text-white hover:bg-[#1b1f23]"
                             rel="noreferrer"
                             target="_blank"

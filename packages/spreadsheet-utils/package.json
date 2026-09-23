@@ -7,11 +7,11 @@
     "homepage": "https://spreadish.aitistack.com/docs/api/utils",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/aitistack/spreadsheet-engine.git",
+        "url": "git+https://github.com/aitistack/spreadish.git",
         "directory": "packages/spreadsheet-utils"
     },
     "bugs": {
-        "url": "https://github.com/aitistack/spreadsheet-engine/issues"
+        "url": "https://github.com/aitistack/spreadish/issues"
     },
     "keywords": [
         "spreadsheet",

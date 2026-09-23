@@ -5,10 +5,11 @@
     "type": "module",
     "scripts": {
         "dev": "bun run generate-search && bun run generate-seo && vite",
-        "build": "bun run generate-search && bun run generate-seo && vite build && bun run generate-seo",
+        "build": "bun run generate-search && bun run generate-seo && vite build && bun run generate-seo && bun run spa-404",
         "preview": "vite preview",
         "generate-seo": "bun run scripts/generate-seo.ts",
-        "generate-search": "bun run scripts/generate-search-index.ts"
+        "generate-search": "bun run scripts/generate-search-index.ts",
+        "spa-404": "bun run scripts/spa-404.ts"
     },
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",

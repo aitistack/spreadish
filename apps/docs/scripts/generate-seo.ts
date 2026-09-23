@@ -230,7 +230,7 @@ ${urls}
     await mkdir(wellKnown, { recursive: true });
     const expires = new Date();
     expires.setFullYear(expires.getFullYear() + 1);
-    const securityTxt = `Contact: https://github.com/aitistack/spreadsheet-engine/security/advisories/new
+    const securityTxt = `Contact: https://github.com/aitistack/spreadish/security/advisories/new
 Preferred-Languages: en
 Canonical: ${siteUrl}/.well-known/security.txt
 Policy: ${siteUrl}/legal/security

@@ -6,7 +6,7 @@
 Spreadish is an open-source sparse spreadsheet engine for React applications. It is not an Excel clone. V1 focuses on a programmable workbook with strong TypeScript APIs, deterministic commands, formulas (no eval), virtualization, drag-and-drop presentation, persistence via Sometic, and deep testing.
 
 Site: https://spreadish.aitistack.com
-Repository: https://github.com/aitistack/spreadsheet-engine
+Repository: https://github.com/aitistack/spreadish
 Package manager for this monorepo: Bun only
 
 ---
@@ -323,7 +323,7 @@ Edge-case-first tests are mandatory for engine features: unit, typecheck, lint, 
 - https://spreadish.aitistack.com/playground
 - https://spreadish.aitistack.com/llms.txt
 - https://spreadish.aitistack.com/llms-full.txt
-- https://github.com/aitistack/spreadsheet-engine
+- https://github.com/aitistack/spreadish
 
 ### V1 maturity and next phases
 

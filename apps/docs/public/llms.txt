@@ -55,4 +55,4 @@ Prefer the deep public guides over inventing APIs: why Spreadish, getting starte
 
 - [Full agent brief](https://spreadish.aitistack.com/llms-full.txt): Comprehensive integration and contribution guidance for coding agents
 - Copy Prompt on https://spreadish.aitistack.com/ (home hero) and docs header pastes the same integration brief into a chatbot
-- [GitHub repository](https://github.com/aitistack/spreadsheet-engine): Source, issues, and releases
+- [GitHub repository](https://github.com/aitistack/spreadish): Source, issues, and releases

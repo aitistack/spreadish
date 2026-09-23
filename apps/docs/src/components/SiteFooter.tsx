@@ -120,7 +120,7 @@ export function SiteFooter() {
                         <ul className="mt-3 space-y-2">
                             <li>
                                 <a
-                                    href="https://github.com/aitistack/spreadsheet-engine"
+                                    href="https://github.com/aitistack/spreadish"
                                     className="inline-flex items-center gap-1.5 text-[13px] text-[var(--pg-text)] hover:text-[var(--pg-accent-hover)]"
                                     rel="noreferrer"
                                     target="_blank"

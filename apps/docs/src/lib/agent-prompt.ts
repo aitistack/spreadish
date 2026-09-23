@@ -10,7 +10,7 @@ Site: https://spreadish.aitistack.com
 Docs: https://spreadish.aitistack.com/docs/getting-started
 Playground: https://spreadish.aitistack.com/playground
 Full agent brief: https://spreadish.aitistack.com/llms-full.txt
-Repo: https://github.com/aitistack/spreadsheet-engine
+Repo: https://github.com/aitistack/spreadish
 
 ## What Spreadish is
 

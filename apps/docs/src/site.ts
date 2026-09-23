@@ -2,8 +2,8 @@ export const SITE = {
     name: 'Spreadish',
     url: 'https://spreadish.aitistack.com',
     description: 'Open-source high-performance spreadsheet engine for React.',
-    github: 'https://github.com/aitistack/spreadsheet-engine',
-    securityAdvisories: 'https://github.com/aitistack/spreadsheet-engine/security/advisories/new',
+    github: 'https://github.com/aitistack/spreadish',
+    securityAdvisories: 'https://github.com/aitistack/spreadish/security/advisories/new',
     npmOrg: 'https://www.npmjs.com/org/spreadish',
 } as const;
 

@@ -1,13 +1,13 @@
 /**
- * Prepare header/favicon icon assets.
+ * Prepare header/favicon icon assets from repo-local sources.
  * Wordmark: only remove solid black background — never resize or recolor art.
  */
+import path from 'node:path';
 import sharp from 'sharp';
 
-const iconSrc =
-    'C:/Users/RS TRADERS/.cursor/projects/d-Aitisam-spreadsheet-engine/assets/d__Aitisam_spreadsheet-engine_icon.png';
-const wordmarkSrc =
-    'C:/Users/RS TRADERS/.cursor/projects/d-Aitisam-spreadsheet-engine/assets/d__Aitisam_spreadsheet-engine_spreadish.png';
+const root = path.resolve(import.meta.dir, '..');
+const iconSrc = path.join(root, 'icon.png');
+const wordmarkSrc = path.join(root, 'apps/docs/src/assets/spreadish.png');
 
 async function knockBlack(
     input: string,
@@ -28,23 +28,17 @@ async function knockBlack(
         }
     }
     let out = sharp(data, {
-        raw: { width: info.width, height: info.height, channels: 4 },
+        raw: { width: info.width, height: info.height, channels: info.channels },
     }).png();
     if (options.size) {
-        out = out.resize(options.size, options.size, {
-            fit: 'contain',
-            background: { r: 0, g: 0, b: 0, alpha: 0 },
-        });
+        out = out.resize(options.size, options.size, { fit: 'contain' });
     }
     await out.toFile(output);
     console.log('wrote', output);
 }
 
-await knockBlack(iconSrc, 'apps/docs/src/assets/icon.png', { size: 128 });
-await knockBlack(iconSrc, 'apps/playground/src/assets/icon.png', { size: 128 });
-await knockBlack(iconSrc, 'icon.png');
-await knockBlack(iconSrc, 'apps/docs/public/favicon.png', { size: 256 });
-await knockBlack(iconSrc, 'apps/playground/public/favicon.png', { size: 256 });
-// Transparent bg only — same pixel dimensions as source.
-await knockBlack(wordmarkSrc, 'apps/docs/src/assets/spreadish.png');
-console.log('done');
+await knockBlack(iconSrc, path.join(root, 'apps/docs/src/assets/icon.png'), { size: 128 });
+await knockBlack(iconSrc, path.join(root, 'apps/playground/src/assets/icon.png'), { size: 128 });
+await knockBlack(iconSrc, path.join(root, 'apps/docs/public/favicon.png'), { size: 64 });
+await knockBlack(wordmarkSrc, path.join(root, 'apps/docs/src/assets/spreadish.png'));
+console.log('prepare-brand-assets: done');

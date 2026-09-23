@@ -2,9 +2,9 @@ name: E2E
 
 on:
     pull_request:
-        branches: [main, development]
+        branches: [main]
     push:
-        branches: [development]
+        branches: [main]
 
 concurrency:
     group: e2e-${{ github.workflow }}-${{ github.ref }}

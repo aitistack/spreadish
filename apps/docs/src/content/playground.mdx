@@ -1,0 +1,134 @@
+import { previewFormula, previewGrid, previewWorkbooks } from '../assets/previews';
+
+# Playground
+
+The live [Spreadish playground](/playground) is a complete host example built from the public packages. Use it to test behavior before reproducing the same integration in your application.
+
+## What it demonstrates
+
+- Virtualized rows and columns
+- Cell and range selection
+- Inline editing and a formula bar
+- Computed formula display
+- Formatting controls
+- Undo and redo
+- Fill-handle behavior
+- Multiple sheets
+- Multi-workbook persistence
+- JSON, CSV, and TSV import and export
+
+<SnippetPreview
+    variant="playground"
+    title="Virtualized spreadsheet grid"
+    description="The grid renders only the visible region while core owns workbook state."
+    image={previewGrid}
+    caption="Select a cell, type a value, or drag the fill handle."
+/>
+
+<SnippetPreview
+    variant="playground"
+    title="Formula bar"
+    description="Formula source remains editable while the cell displays its computed result."
+    image={previewFormula}
+    caption="Try =1+2 or reference another populated cell."
+/>
+
+<SnippetPreview
+    variant="playground"
+    title="Workbook switcher"
+    description="Create, switch, and remove persisted workbook sessions."
+    image={previewWorkbooks}
+    caption="Each catalog entry has an independent serialized workbook."
+/>
+
+## Page composition
+
+The host is composed from four main regions:
+
+1. Header with branding, workbook switching, and file actions
+2. Formula and formatting toolbar
+3. Virtualized spreadsheet grid
+4. Status bar with selection and save information
+
+These regions are application chrome. `@spreadish/react` supplies the grid; core commands and Sometic sessions power the behavior behind the controls.
+
+## Package mapping
+
+- `@spreadish/core`: workbook state, commands, history, formulas, styles, sheets, import, and export
+- `@spreadish/react`: grid virtualization, cell presentation, keyboard routing, and address helpers
+- `@spreadish/sometic`: IndexedDB persistence, save status, and workbook catalog
+- `@spreadish/formula-engine`: parsing and evaluation used by core
+
+## Persistence details
+
+The playground stores workbooks using:
+
+```ts
+createIndexedDBStorageAdapter({
+    dbName: 'spreadish-playground',
+});
+
+createWorkbookWorkspace({
+    storage,
+    prefix: 'playground.workbook',
+    legacyKey: 'playground.workbook',
+});
+```
+
+The catalog is stored separately from each workbook session. Switching the header selection opens the corresponding session and loads a new core workbook instance.
+
+To reset the demo completely, clear site data for the docs origin in your browser. This deletes local playground workbooks.
+
+## Formula behavior
+
+When a formula cell is selected:
+
+- The grid displays the computed value.
+- The formula bar displays source text such as `=SUM(A1:A5)`.
+- Enter commits and moves down.
+- Escape cancels the draft.
+
+This separation is intentional. A formula is source data; its result is the display value.
+
+## Brand navigation
+
+On the docs-embedded `/playground` route, the Spreadish brand mark links back to the documentation home page. It is the quickest way to leave the full-height grid shell and return to the guides.
+
+## Local development
+
+The repository uses Bun:
+
+```bash
+bun install
+bun run dev
+```
+
+Open:
+
+```text
+http://127.0.0.1:5173/playground
+```
+
+To run only the standalone playground package:
+
+```bash
+bun run --filter @spreadish/playground dev
+```
+
+## Things to try
+
+1. Enter `10` in A1 and `=A1*2` in B1.
+2. Change A1 and verify B1 recalculates.
+3. Apply bold text and a fill color to a range.
+4. Undo and redo the style change.
+5. Add and rename a sheet.
+6. Create another workbook from the header.
+7. Reload the page and verify both workbooks remain.
+8. Export a sheet as CSV, then import it into an empty area.
+
+## Guides
+
+- [Getting started](/docs/getting-started)
+- [React renderer](/docs/react)
+- [Persistence and workspaces](/docs/persistence)
+- [Integration recipes](/docs/recipes)

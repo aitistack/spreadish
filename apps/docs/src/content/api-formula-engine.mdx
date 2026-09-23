@@ -1,0 +1,178 @@
+# `@spreadish/formula-engine`
+
+Framework-independent formula tokenization, parsing, dependency analysis, evaluation, and graph utilities.
+
+Most applications should write formulas through `@spreadish/core`. Use this package directly when building formula tooling, diagnostics, or a custom host.
+
+## Install
+
+<InstallTabs packages="@spreadish/formula-engine" />
+
+## Parse safely
+
+```ts
+import { parseFormula } from '@spreadish/formula-engine';
+
+const result = parseFormula('=SUM(A1:A3)');
+
+if (result.ok) {
+    console.log(result.ast);
+} else {
+    console.error(result.error.code, result.error.message);
+}
+```
+
+`parseFormula` accepts an optional leading `=` and returns a discriminated result instead of throwing.
+
+For lower-level parser access:
+
+```ts
+import { parse, parseTokens, tokenize } from '@spreadish/formula-engine';
+```
+
+`parse` and `parseTokens` may throw `FormulaSyntaxError`; prefer `parseFormula` at user-input boundaries.
+
+## Evaluate with a memory context
+
+<SnippetPreview
+  title="Parse and evaluate"
+  description="Supply sparse A1 values through a memory context."
+  language="ts"
+  code={`import {
+  createMemoryContext,
+  parseAndEvaluate,
+} from '@spreadish/formula-engine'
+
+const context = createMemoryContext({
+A1: 10,
+A2: 20,
+})
+
+const result = parseAndEvaluate('=SUM(A1:A2)', context)
+// { kind: 'number', value: 30 }
+
+context.set('A1', 15)
+const updated = parseAndEvaluate('=SUM(A1:A2)', context)`}
+/>
+
+Evaluation returns a typed `FormulaValue`, not a raw JavaScript primitive.
+
+## Value helpers
+
+```ts
+import {
+    EMPTY,
+    booleanValue,
+    errorValue,
+    isError,
+    numberValue,
+    stringValue,
+    toBoolean,
+    toNumber,
+    toText,
+} from '@spreadish/formula-engine';
+```
+
+Conversion helpers implement spreadsheet coercion rules. Check `isError` before consuming a result that may contain an error value.
+
+## References
+
+```ts
+import {
+    columnIndexToLabel,
+    columnLabelToIndex,
+    formatA1,
+    parseA1,
+    parseRefLabel,
+    rangeContains,
+} from '@spreadish/formula-engine';
+
+columnIndexToLabel(26); // AA
+columnLabelToIndex('AA'); // 26
+parseA1('B12');
+```
+
+The engine also exports `MAX_COLUMN_INDEX`, `MAX_ROW_INDEX`, `normalizeRange`, `rangeCellCount`, and stable key helpers.
+
+## Dependency extraction
+
+```ts
+import { formulaToDependencies } from '@spreadish/formula-engine';
+
+const dependencies = formulaToDependencies('=SUM(A1:A3)+C5');
+
+if (dependencies.ok) {
+    console.log(dependencies.refs);
+    console.log(dependencies.ranges);
+}
+```
+
+For an existing AST, use `extractDependencies(ast)`.
+
+## Built-in functions
+
+```ts
+import { BUILTIN_FUNCTION_NAMES, getBuiltin, isBuiltin } from '@spreadish/formula-engine';
+
+isBuiltin('SUM');
+const sum = getBuiltin('SUM');
+```
+
+Built-ins include aggregate, logical, numeric, and text functions. Unknown function names evaluate to a typed name error.
+
+## Dependency graphs
+
+```ts
+import { detectCycles, topologicalOrder, type FormulaNode } from '@spreadish/formula-engine';
+
+const nodes: FormulaNode[] = [
+    { key: 'A1', deps: ['B1'] },
+    { key: 'B1', deps: [] },
+];
+
+const cycles = detectCycles(nodes);
+const order = topologicalOrder(nodes);
+```
+
+Core already manages workbook recalculation; graph helpers are mainly useful for custom engines and diagnostics.
+
+## Limits and security
+
+The package exports `MAX_PARSE_DEPTH` and `MAX_EVAL_DEPTH`. Reference helpers also enforce row and column limits.
+
+Formula execution never uses `eval` or `new Function`. Formulas are parsed into an AST and evaluated against an explicit `EvalContext`.
+
+## Important types
+
+```ts
+import type {
+    AstNode,
+    CellAddress,
+    CellRange,
+    EvalContext,
+    FormulaError,
+    FormulaErrorCode,
+    FormulaValue,
+    MemoryContext,
+    RefNode,
+    Token,
+    TokenType,
+} from '@spreadish/formula-engine';
+```
+
+## Pitfalls
+
+- Formula results are tagged values, not JavaScript primitives.
+- `parseFormula` reports syntax errors; `parse` throws them.
+- A memory context is sparse, so missing cells evaluate as empty.
+- Do not use JavaScript evaluation as a fallback.
+- Do not manually recalculate core workbooks with an unrelated context.
+- Cell coordinates are zero-based internally even when labels are A1-style.
+- Check formula errors before coercing values.
+
+## Guides
+
+- [Formulas](/docs/formulas)
+- [Core model](/docs/core-model)
+- [`@spreadish/core` API](/docs/api/core)
+- [Playground](/playground)

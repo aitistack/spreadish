@@ -1,0 +1,81 @@
+# Why Spreadish
+
+You need a real spreadsheet surface inside a React product — not another Excel clone to maintain, and not a dense grid that pretends empty cells are data.
+
+<Banner title="Built for hosts, not for replacing Excel">
+    Spreadish is a programmable sparse workbook engine. You keep the chrome. Core keeps the document
+    truth.
+</Banner>
+
+## The problem
+
+Most “spreadsheet in React” paths force a bad trade:
+
+- A dense matrix that allocates emptiness
+- UI state that becomes the source of truth
+- Undo stacks that lie when mutations skip commands
+- Formula evaluation that reaches for `eval`
+- Persistence bolted on with a second state library
+
+Teams then discover indexes were treated as identity, DnD reordered pixels instead of documents, and import paths trusted hostile CSV.
+
+## What Spreadish gives you out of the box
+
+<Steps>
+    <Step title="Sparse core workbook">
+        Cells exist only when they hold data or metadata. Row and column identity is stable; order
+        arrays are separate.
+    </Step>
+    <Step title="Deterministic commands">
+        Mutations go through <code>workbook.execute</code>. Undo and redo stay honest because
+        history tracks commands, not ad-hoc React sets.
+    </Step>
+    <Step title="Formulas without eval">
+        Lexer, parser, AST, and evaluator in <code>@spreadish/formula-engine</code> — wired through
+        core recalculation.
+    </Step>
+    <Step title="Virtualized React grid">
+        <code>@spreadish/react</code> paints a viewport. React may mirror selection drafts; it does
+        not own the workbook.
+    </Step>
+    <Step title="Official Sometic persistence">
+        Sessions and multi-workbook workspaces via <code>@spreadish/sometic</code> — IndexedDB
+        without inventing Zustand parallel state.
+    </Step>
+</Steps>
+
+## When to use Spreadish
+
+- Embedding a spreadsheet-like editor in a React product
+- Offline-first drafts that must round-trip through durable snapshots
+- Hosts that want TypeScript-first APIs and testable command streams
+- Teams that already (or will) use Sometic for app state and persistence
+
+## When not to use Spreadish
+
+<Callout tone="warning" title="V1 is not Excel">
+    Do not plan V1 delivery around pivot tables, charts, macros/VBA, realtime multi-user
+    collaboration, full Excel formula parity, or XLSX binary fidelity.
+</Callout>
+
+<Checklist variant="dont">
+    <li>You need a full desktop spreadsheet product for end users tomorrow</li>
+    <li>You require Google-Docs-style realtime co-editing in V1</li>
+    <li>You insist on index-as-identity or a dense matrix source of truth</li>
+    <li>
+        You want formulas executed with <code>eval</code> “just this once”
+    </li>
+</Checklist>
+
+## Why this approach (under the hood)
+
+Spreadish separates **document truth** (`@spreadish/core`) from **presentation** (`@spreadish/react`) and **persistence adapters** (`@spreadish/sometic`). That keeps core framework-independent, prevents circular package graphs, and lets hosts bring their own design system.
+
+The playground on this site is a Hallmark shell that dispatches core commands — React is never the workbook.
+
+## Related
+
+- [Getting started](/docs/getting-started)
+- [Architecture](/docs/architecture)
+- [Roadmap](/docs/roadmap)
+- [Playground](/playground)

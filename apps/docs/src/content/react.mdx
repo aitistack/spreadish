@@ -1,0 +1,236 @@
+# React renderer
+
+`@spreadish/react` renders a virtualized spreadsheet viewport while `@spreadish/core` remains the source of truth. The React package does not own workbook state or mutate cells directly.
+
+## Install
+
+<InstallTabs packages="@spreadish/core @spreadish/react" />
+
+Import the stylesheet once near your application root:
+
+```tsx
+import '@spreadish/react/styles.css';
+```
+
+## Responsibilities
+
+Use React for:
+
+- Virtualized rows and columns
+- Cell, header, selection, and editor presentation
+- Keyboard and pointer interaction
+- Converting core styles into CSS
+
+Keep these responsibilities in core:
+
+- Cell values and formulas
+- Selection and editor state
+- Clipboard state
+- History
+- Row, column, sheet, and style mutations
+
+## Controlled grid
+
+`SpreadsheetGrid` receives current core state and callbacks that dispatch commands.
+
+<SnippetPreview
+  title="Controlled spreadsheet grid"
+  description="Subscribe to domain events and pass core state back into the renderer."
+  code={`import { useEffect, useMemo, useState } from 'react'
+import { createWorkbook } from '@spreadish/core'
+import { SpreadsheetGrid } from '@spreadish/react'
+import '@spreadish/react/styles.css'
+
+export function Spreadsheet() {
+  const workbook = useMemo(
+    () => createWorkbook({ name: 'Planning', sheetName: 'Sheet 1' }),
+    [],
+  )
+  const [, render] = useState(0)
+
+useEffect(
+() => workbook.subscribe(() => render((version) => version + 1)),
+[workbook],
+)
+
+const state = workbook.getState()
+const sheetId = state.activeSheetId
+const selection = workbook.getSelection()
+const editor = workbook.getEditor()
+const draft = editor.status === 'editing' ? editor.draft : ''
+
+return (
+
+<div style={{ height: 520 }}>
+<SpreadsheetGrid
+workbook={workbook}
+sheetId={sheetId}
+selection={selection}
+editor={editor}
+clipboard={workbook.getClipboard()}
+draft={draft}
+showCellEditor
+onSelect={(row, column, options) => {
+if (!sheetId) return
+if (options?.extend) {
+workbook.execute({ type: 'extendSelectionTo', row, column })
+return
+}
+workbook.execute({
+type: 'selectRange',
+sheetId,
+start: { row, column },
+end: { row, column },
+active: { row, column },
+append: options?.append,
+})
+}}
+onDraftChange={(value) =>
+workbook.execute({ type: 'updateDraft', draft: value })
+}
+onBeginEdit={(intent) =>
+workbook.execute({ type: 'startEditing', intent })
+}
+onCommit={(move) =>
+workbook.execute({ type: 'commitEditing', move })
+}
+onCancelEdit={() => workbook.execute({ type: 'cancelEditing' })}
+onAutofill={(endRow, endColumn) =>
+workbook.execute({ type: 'autofillSelection', endRow, endColumn })
+}
+/>
+</div>
+)
+}`}
+/>
+
+Always give the grid a bounded height. Virtualization needs a real scrollport; an unconstrained container can make the page scroll instead of the cell viewport.
+
+## Grid dimensions
+
+The default logical viewport is:
+
+```ts
+import {
+    DEFAULT_COLUMN_COUNT,
+    DEFAULT_COLUMN_HEADER_HEIGHT,
+    DEFAULT_COLUMN_WIDTH,
+    DEFAULT_ROW_COUNT,
+    DEFAULT_ROW_HEADER_WIDTH,
+    DEFAULT_ROW_HEIGHT,
+} from '@spreadish/react';
+```
+
+`DEFAULT_ROW_COUNT` is `300` and `DEFAULT_COLUMN_COUNT` is `40`. Override them when your host exposes a different logical extent:
+
+```tsx
+<SpreadsheetGrid
+    {...gridProps}
+    rowCount={1_000}
+    columnCount={100}
+    getRowHeight={(row) => (row === 0 ? 40 : 28)}
+    getColumnWidth={(column) => (column === 0 ? 220 : 100)}
+    hiddenRows={hiddenRows}
+    hiddenColumns={hiddenColumns}
+    layoutVersion={layoutVersion}
+/>
+```
+
+Increment `layoutVersion` after row or column sizing changes so the virtualizers remeasure.
+
+## Formula bar pattern
+
+The formula bar is host chrome. Mirror the active edit draft, but dispatch editor commands instead of writing directly to cells.
+
+```tsx
+<input
+    data-testid="formula-bar"
+    value={draft}
+    onFocus={() => workbook.execute({ type: 'startEditing', intent: 'edit' })}
+    onChange={(event) => workbook.execute({ type: 'updateDraft', draft: event.target.value })}
+    onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+            workbook.execute({ type: 'commitEditing', move: 'down' });
+        }
+        if (event.key === 'Escape') {
+            workbook.execute({ type: 'cancelEditing' });
+        }
+    }}
+/>
+```
+
+Formula cells display their computed value in the grid while the formula bar keeps source text such as `=SUM(A1:A5)`.
+
+## Keyboard routing
+
+`SpreadsheetGrid` uses `useSpreadsheetKeyboard` internally. Hosts can also use the hook when building a custom viewport or coordinating an external formula bar.
+
+```ts
+useSpreadsheetKeyboard({
+    workbook,
+    sheetId,
+    selection,
+    editor,
+    draft,
+    editing: editor.status === 'editing',
+    rowCount: 300,
+    columnCount: 40,
+    onDraftChange,
+    onCommit,
+    onBeginEdit,
+    onCancelEdit,
+    focusGrid,
+});
+```
+
+The hook handles navigation, editing, undo and redo, selection shortcuts, and clipboard commands. Browser clipboard access may still require HTTPS, permission, and a user gesture.
+
+## Address and display helpers
+
+```ts
+import {
+    addressToLabel,
+    columnIndexToLabel,
+    formatCellDisplay,
+    labelToAddress,
+} from '@spreadish/react';
+
+addressToLabel({ row: 11, column: 1 }); // B12
+columnIndexToLabel(26); // AA
+labelToAddress('B12'); // { row: 11, column: 1 }
+
+const text = formatCellDisplay(cell, resolvedStyle);
+```
+
+Addresses use zero-based row and column indexes in code. A1 labels are one-based for users.
+
+## Cell styles
+
+`cellStyleToCss` converts a resolved core `CellStyle` into React CSS properties:
+
+```tsx
+import { cellStyleToCss } from '@spreadish/react';
+
+const style = workbook.resolveCellStyle(sheetId, row, column);
+
+return <div style={cellStyleToCss(style)}>Value</div>;
+```
+
+Resolve styles through the workbook first so base styles and conditional formatting are represented correctly.
+
+## Common pitfalls
+
+- Do not treat React component state as the canonical workbook.
+- Do not mutate sheet maps or cell records directly.
+- Do not recreate the workbook during every render.
+- Do not omit the package stylesheet.
+- Do not render thousands of cells yourself when `SpreadsheetGrid` can virtualize them.
+- Do not assume browser clipboard APIs are always available.
+- Do not show formula source with `formatCellDisplay`; it intentionally returns the computed value.
+
+## Guides
+
+- [Getting started](/docs/getting-started)
+- [Integration recipes](/docs/recipes)
+- [Formulas](/docs/formulas)
+- [`@spreadish/react` API](/docs/api/react)

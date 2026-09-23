@@ -1,0 +1,332 @@
+# Spreadish — full agent brief
+
+> Comprehensive guidance for coding agents integrating or contributing to Spreadish.
+> Companion to https://spreadish.aitistack.com/llms.txt
+
+Spreadish is an open-source sparse spreadsheet engine for React applications. It is not an Excel clone. V1 focuses on a programmable workbook with strong TypeScript APIs, deterministic commands, formulas (no eval), virtualization, drag-and-drop presentation, persistence via Sometic, and deep testing.
+
+Site: https://spreadish.aitistack.com
+Repository: https://github.com/aitistack/spreadsheet-engine
+Package manager for this monorepo: Bun only
+
+---
+
+## What to read first
+
+1. https://spreadish.aitistack.com/docs/getting-started
+2. https://spreadish.aitistack.com/docs/architecture
+3. https://spreadish.aitistack.com/docs/api/core
+4. https://spreadish.aitistack.com/docs/api/react
+5. https://spreadish.aitistack.com/docs/api/sometic
+6. https://spreadish.aitistack.com/playground (live behavior reference)
+
+For repository contributors, the in-repo agent contract is `AGENTS.md` plus the numbered docs under `docs/` and phase specs under `phases/`. Public READMEs must link only to https://spreadish.aitistack.com, never to `AGENTS.md` or `docs/NN-*.md`.
+
+---
+
+## Package map and dependency direction
+
+```text
+@spreadish/utils
+        ↓
+@spreadish/core  ←  @spreadish/formula-engine
+        ↓
+@spreadish/react
+        ↓
+@spreadish/sometic   (official app persistence only)
+
+@spreadish/testing → all packages (tests only)
+```
+
+Never invert or cycle dependencies.
+
+### Hard boundaries
+
+| Package | Owns | Must not |
+| --- | --- | --- |
+| `@spreadish/core` | Workbook, sparse cells, rows/columns, selection, commands, history, formulas wiring, serialize, import/export | Import React, Sometic, Tailwind, daisyUI, or browser UI libs |
+| `@spreadish/react` | Virtualized grid, keyboard, a11y, visual interaction | Own canonical workbook state |
+| `@spreadish/sometic` | Sessions, IndexedDB StorageAdapter, workspace catalog, persistable event filter | Invent non-Sometic state/query libraries |
+| `@spreadish/formula-engine` | Lexer, parser, AST, evaluator | Use `eval` / `new Function` |
+| `@spreadish/utils` | Pure shared helpers | Depend on React or Sometic |
+
+Do not add Zustand, TanStack Query, Redux, or another app state/query library for the official integration path.
+
+---
+
+## Data model rules (critical)
+
+1. **Sparse storage.** Only existing cells, rows, and columns are stored. Empty cells remain addressable without a dense matrix source of truth.
+2. **Index is not identity.** Rows and columns have stable IDs plus separate order arrays. Reorder changes display indexes; IDs stay stable.
+3. **Commands are the only mutation path.** Hosts call `workbook.execute(command)`. UI callbacks must dispatch validated commands, not mutate core state directly.
+4. **Selection drafts may live in React.** Document truth stays in core.
+5. **Serialization is versioned.** Prefer `serialize()` / `loadWorkbook(...)` and the JSON helpers for interchange.
+
+---
+
+## Minimal React host pattern
+
+`SpreadsheetGrid` is controlled. Pass core state in; dispatch commands from callbacks. Give the grid a bounded-height parent.
+
+```tsx
+import { useEffect, useMemo, useState } from 'react'
+import { createWorkbook } from '@spreadish/core'
+import { SpreadsheetGrid } from '@spreadish/react'
+import '@spreadish/react/styles.css'
+
+export function SpreadsheetHost() {
+  const workbook = useMemo(
+    () => createWorkbook({ name: 'Demo', sheetName: 'Sheet 1' }),
+    [],
+  )
+  const [, bump] = useState(0)
+  useEffect(() => workbook.subscribe(() => bump((n) => n + 1)), [workbook])
+
+  const sheetId = workbook.getState().activeSheetId
+  const editor = workbook.getEditor()
+  const draft = editor.status === 'editing' ? editor.draft : ''
+  if (!sheetId) return null
+
+  return (
+    <div style={{ height: '100vh' }}>
+      <SpreadsheetGrid
+        workbook={workbook}
+        sheetId={sheetId}
+        selection={workbook.getSelection()}
+        editor={editor}
+        clipboard={workbook.getClipboard()}
+        draft={draft}
+        showCellEditor
+        onSelect={(row, column) => {
+          workbook.execute({ type: 'selectCell', sheetId, row, column })
+        }}
+        onDraftChange={(value) =>
+          workbook.execute({ type: 'updateDraft', draft: value })
+        }
+        onBeginEdit={(intent) =>
+          workbook.execute({ type: 'startEditing', intent })
+        }
+        onCommit={(move) =>
+          workbook.execute({ type: 'commitEditing', move })
+        }
+        onCancelEdit={() => workbook.execute({ type: 'cancelEditing' })}
+      />
+    </div>
+  )
+}
+```
+
+Install (any manager):
+
+```text
+bun add @spreadish/core @spreadish/react @spreadish/sometic
+pnpm add @spreadish/core @spreadish/react @spreadish/sometic
+npm install @spreadish/core @spreadish/react @spreadish/sometic
+yarn add @spreadish/core @spreadish/react @spreadish/sometic
+```
+
+---
+
+## Commands and formulas
+
+Typical cell write:
+
+```ts
+workbook.execute({
+  type: 'setCellValue',
+  sheetId,
+  row: 0,
+  column: 0,
+  value: '=SUM(1,2,3)',
+})
+```
+
+After commit, the display value is computed; formula text remains available for a formula bar. Errors surface as typed cell errors (for example `#CIRC!`, `#NAME?`), not thrown UI crashes.
+
+Never evaluate formulas with `eval` or `new Function`. Use `@spreadish/formula-engine` through core recalculation.
+
+---
+
+## Persistence: session vs workspace
+
+### Single document session
+
+Use `createWorkbookSession` when the host has one active workbook key.
+
+- Storage: `createIndexedDBStorageAdapter({ dbName })`
+- Commit only persistable domain events via `isPersistableDomainEvent`
+- Selection, draft typing, and clipboard churn should not spam storage
+
+### Multi-workbook workspace
+
+Use `createWorkbookWorkspace` when users need a catalog of documents.
+
+```ts
+import {
+  createIndexedDBStorageAdapter,
+  createWorkbookWorkspace,
+} from '@spreadish/sometic'
+import { createWorkbook, loadWorkbook } from '@spreadish/core'
+
+const workspace = createWorkbookWorkspace({
+  storage: createIndexedDBStorageAdapter({ dbName: 'my-app' }),
+  prefix: 'app.workbook',
+  defaultName: 'Untitled Workbook',
+})
+
+await workspace.hydrated
+const session = workspace.getActiveSession()
+const snap = session.getSnapshot()
+const workbook = snap.serialized
+  ? loadWorkbook(snap.serialized)
+  : createWorkbook({ name: 'Untitled Workbook', sheetName: 'Sheet 1' })
+
+await workspace.create('Budget FY26')
+await workspace.switchTo(/* id */)
+```
+
+The docs playground header dropdown is this workspace API under product chrome. Playground IndexedDB database name is `spreadish-playground` with prefix `playground.workbook`.
+
+Verified Sometic packages used by the official adapter:
+
+- `@sometic/store`
+- `@sometic/store/persistent`
+- `@sometic/query`
+- `@sometic/core`
+- `@sometic/react` (when React bindings are needed)
+
+IndexedDB must be implemented as a real `StorageAdapter`. Prefer reading installed `.d.ts` files before inventing APIs.
+
+---
+
+## Import and export
+
+From `@spreadish/core`:
+
+- `exportWorkbookJson` / `importWorkbookJson` / `loadWorkbook`
+- `exportSheetCsv` / `exportSheetTsv` / `planDelimitedSheetImport`
+- Import limits and schema migration helpers are exported; respect max bytes/cells/rows/columns
+
+---
+
+## Playground product shell (V1)
+
+Live demo: https://spreadish.aitistack.com/playground
+
+Composition:
+
+1. App header: brand mark, workbook title + switcher, Saved status, undo/redo, theme, import/export
+2. Formula + format strip on one row
+3. Full-width virtualized grid (only this region scrolls)
+4. Status bar: sheet tabs, zoom, fullscreen
+
+Not in V1 layout: left Sheets sidebar, right Properties sidebar, Share/Comments/search chrome as live features.
+
+Brand mark on the docs-embedded playground links home (`/`). Standalone playground may leave that unset.
+
+Favicon and header brand mark use product `icon.png`. Home hero uses the full Spreadish wordmark (`spreadish.png`) unchanged, with aspect ratio clamped.
+
+---
+
+## Docs site conventions (apps/docs)
+
+- Visual tokens: emerald `#10B981`, page wash `#EEF1F4`, Urbanist body / Chakra Petch display / JetBrains Mono code (self-hosted fonts)
+- Do not use internal design-system codenames in public copy
+- Icons: `lucide-react` for chrome, CTAs, copy buttons, and navigation affordances
+- Header is transparent at rest; solid frosted background after scroll; Ctrl/Cmd+K command palette
+- Site footer on home, `/docs/*`, and `/legal/*`; omitted on `/playground`
+- Legal hub: `/legal`, privacy, terms, security, license
+- Why Spreadish: `/docs/why-spreadish`
+- Code blocks and install tabs share one dark shell with slate gray dividers (`#334155`)
+- Primary emerald CTAs use page-bg text color (`#EEF1F4`)
+- Preview images are live playground captures under `apps/docs/src/assets/previews/`
+
+Public LLM discovery files:
+
+- https://spreadish.aitistack.com/llms.txt
+- https://spreadish.aitistack.com/llms-full.txt (this file)
+
+---
+
+## Local monorepo gates
+
+From repository root:
+
+```bash
+bun install
+bun run format:check
+bun run lint
+bun run typecheck
+bun run test:unit
+bun run check:circular
+bun run build
+bun run package:check
+bun run test:e2e
+bun run docs:build
+bun run docs:dev   # or bun run dev → open /playground
+```
+
+Do not claim a gate passed without running it. Do not skip phases while exit criteria fail. Do not publish manually; releases use Changesets + OIDC Trusted Publishing.
+
+Edge-case-first tests are mandatory for engine features: unit, typecheck, lint, E2E when user-visible, undo/redo when mutating, persistence when persisting.
+
+---
+
+## Security and reliability notes for hosts
+
+- Treat imported workbook JSON/CSV/TSV as untrusted input; respect import size limits
+- Formula evaluation must remain sandboxed (engine path only)
+- Persistence keys and IndexedDB database names should be scoped per app
+- Do not store secrets in workbook cells or local snapshot documents
+
+---
+
+## Contribution posture for agents
+
+1. Prefer extending existing packages over inventing parallel APIs
+2. Keep core free of UI and Sometic imports
+3. Dispatch commands from UI; never mutate workbook maps from DnD/React callbacks
+4. Update `apps/playground` and/or docs playground wiring when user-visible behavior changes
+5. Match docs visual tokens; avoid purple-on-white, cream/serif/terracotta, or broadsheet newspaper aesthetics
+6. Use 4-space TypeScript, EditorConfig, Prettier
+7. When package public behavior changes, update docs pages and a changeset
+
+---
+
+## Quick link index
+
+### Guides
+
+- https://spreadish.aitistack.com/docs/getting-started
+- https://spreadish.aitistack.com/docs/architecture
+- https://spreadish.aitistack.com/docs/core-model
+- https://spreadish.aitistack.com/docs/react
+- https://spreadish.aitistack.com/docs/formulas
+- https://spreadish.aitistack.com/docs/persistence
+- https://spreadish.aitistack.com/docs/import-export
+- https://spreadish.aitistack.com/docs/recipes
+- https://spreadish.aitistack.com/docs/playground
+- https://spreadish.aitistack.com/docs/roadmap
+- https://spreadish.aitistack.com/docs/contributing
+
+### API
+
+- https://spreadish.aitistack.com/docs/api/core
+- https://spreadish.aitistack.com/docs/api/react
+- https://spreadish.aitistack.com/docs/api/sometic
+- https://spreadish.aitistack.com/docs/api/formula-engine
+- https://spreadish.aitistack.com/docs/api/utils
+
+### Demo and discovery
+
+- https://spreadish.aitistack.com/
+- https://spreadish.aitistack.com/playground
+- https://spreadish.aitistack.com/llms.txt
+- https://spreadish.aitistack.com/llms-full.txt
+- https://github.com/aitistack/spreadsheet-engine
+
+### V1 maturity and next phases
+
+V1 engine surface (sparse core, React grid, formulas, Sometic sessions/workspaces, import/export, playground, docs) is feature-complete and verified green. Phase 10 Release is next (npm publish, Changesets, Trusted Publishing). Post-V1 glimpse: broader formulas, XLSX (permissive license), charts/pivots as separate packages, collaboration above commands, richer cells, host plugins. Details: https://spreadish.aitistack.com/docs/roadmap
+
+Use **Copy Prompt** on the docs site header or home hero to paste a self-contained agent brief into a coding chatbot.

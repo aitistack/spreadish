@@ -1,0 +1,192 @@
+# `@spreadish/sometic`
+
+Official persistence, query, offline queue, and workspace adapters for Spreadish.
+
+## Install
+
+<InstallTabs packages="@spreadish/core @spreadish/sometic" />
+
+## IndexedDB adapter
+
+```ts
+import { createIndexedDBStorageAdapter } from '@spreadish/sometic';
+
+const storage = createIndexedDBStorageAdapter({
+    dbName: 'my-app',
+});
+```
+
+Use one database name per application boundary. Session keys and workspace prefixes separate documents inside it.
+
+## `createWorkbookSession`
+
+```ts
+import { createNoopSyncTransport, createWorkbookSession } from '@spreadish/sometic';
+
+const session = createWorkbookSession({
+    storage,
+    key: 'workbook.main',
+    workbookId: 'wb_main',
+    sync: createNoopSyncTransport(),
+    online: true,
+});
+
+await session.hydrated;
+await session.commitSerialized(workbook.serialize());
+```
+
+Session methods:
+
+- `getSnapshot()`
+- `subscribe(listener)`
+- `commitSerialized(serialized)`
+- `flush()`
+- `syncNow()`
+- `setOnline(online)`
+- `clear()`
+- `dispose()`
+
+The session also exposes its Sometic `queryClient`.
+
+## Persistable events
+
+```ts
+import { isPersistableDomainEvent, NON_PERSISTABLE_EVENT_TYPES } from '@spreadish/sometic';
+
+workbook.subscribe((event) => {
+    if (!isPersistableDomainEvent(event)) return;
+    void session.commitSerialized(workbook.serialize());
+});
+```
+
+`NON_PERSISTABLE_EVENT_TYPES` contains selection, editor, clipboard, history, and generic transaction events.
+
+## `createWorkbookWorkspace`
+
+```ts
+import { createWorkbookWorkspace } from '@spreadish/sometic';
+
+const workspace = createWorkbookWorkspace({
+    storage,
+    prefix: 'app.workbook',
+    legacyKey: 'app.workbook',
+    defaultName: 'Untitled Workbook',
+});
+
+await workspace.hydrated;
+
+const id = await workspace.create('Budget');
+await workspace.renameInCatalog(id, 'Budget FY27');
+await workspace.switchTo(id);
+
+const entries = workspace.list();
+const session = workspace.getActiveSession();
+```
+
+Workspace methods:
+
+- `list()`
+- `getActiveId()`
+- `getActiveSession()`
+- `create(name?)`
+- `switchTo(id)`
+- `renameInCatalog(id, name)`
+- `remove(id)`
+- `subscribe(listener)`
+- `dispose()`
+
+The final catalog entry cannot be removed.
+
+## Sync transports
+
+```ts
+import { createMemorySyncTransport, createNoopSyncTransport } from '@spreadish/sometic';
+
+const localOnly = createNoopSyncTransport();
+const testSync = createMemorySyncTransport();
+```
+
+Use the memory transport for deterministic tests. Implement `SyncTransport` for a production server.
+
+## Storage adapters
+
+The package re-exports Sometic persistence contracts and helpers:
+
+```ts
+import {
+    createMemoryStorage,
+    createWebStorageAdapter,
+    type PersistMigration,
+    type PersistedEnvelope,
+    type StorageAdapter,
+} from '@spreadish/sometic';
+```
+
+`createMemoryStorage` is suitable for tests. `createWebStorageAdapter(localStorage)` is convenient for small documents, but IndexedDB is preferred for real workbooks.
+
+## Offline queue helpers
+
+Advanced sync implementations can use:
+
+```ts
+import {
+    acknowledgeThrough,
+    createMutationId,
+    enqueueMutation,
+    findDuplicateMutation,
+} from '@spreadish/sometic';
+```
+
+Most hosts do not need to call these directly because `WorkbookSession` manages its queue.
+
+## Query and store re-exports
+
+For integrations that need the same verified Sometic primitives:
+
+```ts
+import {
+    createMutationObserver,
+    createQueryClient,
+    createQueryObserver,
+    createStore,
+    select,
+} from '@spreadish/sometic';
+```
+
+These are Sometic APIs, not alternate workbook state containers. Core remains the canonical live workbook.
+
+## Important types
+
+```ts
+import type {
+    CreateIndexedDBStorageOptions,
+    CreateWorkbookSessionOptions,
+    CreateWorkbookWorkspaceOptions,
+    OfflineMutation,
+    PersistedWorkbookDocument,
+    SaveStatus,
+    SyncTransport,
+    WorkbookCatalogDocument,
+    WorkbookCatalogEntry,
+    WorkbookSession,
+    WorkbookSessionSnapshot,
+    WorkbookWorkspace,
+} from '@spreadish/sometic';
+```
+
+## Pitfalls
+
+- Await hydration before loading or seeding a workbook.
+- Pass `workbook.serialize()`, not the runtime workbook.
+- Do not save every domain event.
+- Flush before intentional document switches.
+- Keep catalog and workbook display names synchronized.
+- Handle `status === 'error'` and `lastError`.
+- Dispose sessions and workspaces during teardown.
+- Do not use a memory adapter when browser persistence is expected.
+
+## Guides
+
+- [Persistence and workspaces](/docs/persistence)
+- [Getting started](/docs/getting-started)
+- [Integration recipes](/docs/recipes)

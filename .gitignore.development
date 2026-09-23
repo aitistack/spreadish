@@ -16,8 +16,6 @@ blob-report/
 .DS_Store
 Thumbs.db
 *.log
-MASTER_PROMPT.md
-logo.png
 .tmp-ui/
 .tmp-pack-*/
 apps/playground/.tmp-*.png
@@ -26,14 +24,15 @@ apps/playground/.tmp-*.png
 .idea/
 .cursorrules
 .cursorignore.local
-docs/
 .cursorignore
 .cursorindexignore
 .cursorindexingignore
-AGENTS.md
-MASTER_PROMPT.md
-playground.png
-icon.png
-logo.png
 .agents/
-.cursor/
+
+# Agent-only materials at repo root (not public / not apps)
+/docs/
+/AGENTS.md
+/MASTER_PROMPT.md
+/playground.png
+/icon.png
+/logo.png

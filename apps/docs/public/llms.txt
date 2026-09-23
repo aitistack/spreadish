@@ -1,0 +1,58 @@
+# Spreadish
+
+> Open-source, high-performance sparse spreadsheet engine for React. Deterministic commands, formulas without eval, virtualized grid, and Sometic-backed persistence. Not an Excel clone.
+
+Spreadish is a programmable workbook runtime for React hosts. Canonical document state lives in `@spreadish/core`. React presents and virtualizes. Persistence goes through `@spreadish/sometic`. Prefer Bun for this monorepo; consumer apps may install packages with bun, pnpm, npm, or yarn.
+
+Key rules for agents integrating Spreadish:
+
+- Mutations go through `workbook.execute(...)` commands only
+- Sparse cells and stable row/column IDs (index is not identity)
+- Do not use `eval` / `new Function` for formulas
+- Do not invent a second app state library; official persistence is Sometic via `@spreadish/sometic`
+- Core must stay framework-independent (no React or Sometic imports in `@spreadish/core`)
+- `SpreadsheetGrid` is controlled: pass sheetId, selection, editor, clipboard, draft, and editor/selection callbacks — do not treat React as workbook truth
+
+Prefer the deep public guides over inventing APIs: why Spreadish, getting started, architecture, core model, React renderer, persistence, formulas, import/export, recipes, contributing, and roadmap.
+
+## Docs
+
+- [Home](https://spreadish.aitistack.com/): Product story, install tabs, playground previews
+- [Why Spreadish](https://spreadish.aitistack.com/docs/why-spreadish): Problem, fit, and when not to use
+- [Getting started](https://spreadish.aitistack.com/docs/getting-started): Install, create workbook, mount grid, persist session
+- [Architecture](https://spreadish.aitistack.com/docs/architecture): Package boundaries and host duties
+- [Core model](https://spreadish.aitistack.com/docs/core-model): Sparse model, IDs vs order, commands, serialize/load
+- [React renderer](https://spreadish.aitistack.com/docs/react): SpreadsheetGrid, selection callbacks, virtualization
+- [Formulas](https://spreadish.aitistack.com/docs/formulas): Formula commands, recalculation, no-eval guarantee
+- [Persistence and workspaces](https://spreadish.aitistack.com/docs/persistence): Sessions and multi-workbook workspace API
+- [Import and export](https://spreadish.aitistack.com/docs/import-export): JSON, CSV, TSV
+- [Integration recipes](https://spreadish.aitistack.com/docs/recipes): Copy-paste host patterns
+- [Playground guide](https://spreadish.aitistack.com/docs/playground): How the live demo maps to packages
+- [Roadmap](https://spreadish.aitistack.com/docs/roadmap): V1 maturity, Phase 10 release, post-V1 glimpse
+- [Contributing](https://spreadish.aitistack.com/docs/contributing): Local gates and repo conventions
+
+## Legal
+
+- [Legal](https://spreadish.aitistack.com/legal): Trust hub
+- [Privacy](https://spreadish.aitistack.com/legal/privacy)
+- [Terms](https://spreadish.aitistack.com/legal/terms)
+- [Security](https://spreadish.aitistack.com/legal/security)
+- [License](https://spreadish.aitistack.com/legal/license)
+
+## API
+
+- [@spreadish/core](https://spreadish.aitistack.com/docs/api/core): Workbook, commands, history, serialize, import/export
+- [@spreadish/react](https://spreadish.aitistack.com/docs/api/react): SpreadsheetGrid and React chrome
+- [@spreadish/sometic](https://spreadish.aitistack.com/docs/api/sometic): Sessions, IndexedDB adapter, workspace catalog
+- [@spreadish/formula-engine](https://spreadish.aitistack.com/docs/api/formula-engine): Lexer, parser, AST, evaluator
+- [@spreadish/utils](https://spreadish.aitistack.com/docs/api/utils): Shared pure helpers
+
+## Demo
+
+- [Playground](https://spreadish.aitistack.com/playground): Full product shell with formulas, sheets, undo, autosave, multi-workbook switcher
+
+## Optional
+
+- [Full agent brief](https://spreadish.aitistack.com/llms-full.txt): Comprehensive integration and contribution guidance for coding agents
+- Copy Prompt on https://spreadish.aitistack.com/ (home hero) and docs header pastes the same integration brief into a chatbot
+- [GitHub repository](https://github.com/aitistack/spreadsheet-engine): Source, issues, and releases

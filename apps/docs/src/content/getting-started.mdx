@@ -1,0 +1,348 @@
+import { previewGrid } from '../assets/previews';
+
+# Getting started
+
+Spreadish is a programmable spreadsheet engine for React applications. You create a sparse core workbook, render it with `@spreadish/react`, and optionally persist serialized snapshots through `@spreadish/sometic`.
+
+<Banner title="New here?">
+    Prefer the motivation first? Read [Why Spreadish](/docs/why-spreadish), then come back for
+    install steps.
+</Banner>
+
+## What you will build
+
+By the end you will:
+
+<Steps>
+    <Step title="Install packages">
+        Add core, React, and persistence packages with your app’s package manager.
+    </Step>
+    <Step title="Create a sparse workbook">
+        Use <code>createWorkbook</code> — cells allocate only when they hold data.
+    </Step>
+    <Step title="Mount the grid">
+        Render a controlled <code>SpreadsheetGrid</code> and wire selection/editing commands.
+    </Step>
+    <Step title="Persist">
+        Restore and save through <code>@spreadish/sometic</code> IndexedDB sessions.
+    </Step>
+</Steps>
+
+## Install
+
+Pick the package manager already used by your application.
+
+<InstallTabs packages="@spreadish/core @spreadish/react @spreadish/sometic" />
+
+Import the grid stylesheet once from your application entry point:
+
+```tsx
+import '@spreadish/react/styles.css';
+```
+
+Do not import the stylesheet inside every grid component.
+
+## See the target UI
+
+Open the [playground](/playground) at any time to compare your host with a complete integration.
+
+<SnippetPreview
+    variant="playground"
+    title="Playground grid"
+    description="Formula bar, virtualized cells, A1 selection, formatting, and fill handle."
+    image={previewGrid}
+    caption="Captured from the live Spreadish playground."
+/>
+
+## Create a workbook
+
+`createWorkbook` creates an empty sparse document. Cells are allocated only when they contain data or metadata.
+
+```ts
+import { createWorkbook } from '@spreadish/core';
+
+const workbook = createWorkbook({
+    name: 'Ops tracker',
+    sheetName: 'Sheet 1',
+});
+
+const sheetId = workbook.getState().activeSheetId!;
+
+workbook.execute({
+    type: 'setCellValue',
+    sheetId,
+    row: 0,
+    column: 0,
+    value: 'Hello',
+});
+```
+
+Rows and columns use zero-based indexes in code, so `{ row: 0, column: 0 }` is A1.
+
+Do not build a dense two-dimensional array as a second source of truth. Read cells from the workbook and dispatch commands for changes.
+
+## Mount the React grid
+
+The grid is controlled: your host passes current core state and maps callbacks back to commands.
+
+<SnippetPreview
+  title="Host a controlled grid"
+  description="Subscribe so React rerenders after core emits domain events."
+  code={`import { useEffect, useMemo, useState } from 'react'
+import { createWorkbook } from '@spreadish/core'
+import { SpreadsheetGrid } from '@spreadish/react'
+import '@spreadish/react/styles.css'
+
+export function App() {
+  const workbook = useMemo(
+    () => createWorkbook({ name: 'Demo', sheetName: 'Sheet 1' }),
+    [],
+  )
+  const [, render] = useState(0)
+
+useEffect(
+() => workbook.subscribe(() => render((version) => version + 1)),
+[workbook],
+)
+
+const sheetId = workbook.getState().activeSheetId
+const editor = workbook.getEditor()
+const draft = editor.status === 'editing' ? editor.draft : ''
+
+return (
+
+<div style={{ height: '100vh' }}>
+<SpreadsheetGrid
+workbook={workbook}
+sheetId={sheetId}
+selection={workbook.getSelection()}
+editor={editor}
+clipboard={workbook.getClipboard()}
+draft={draft}
+showCellEditor
+onSelect={(row, column, options) => {
+if (!sheetId) return
+if (options?.extend) {
+workbook.execute({ type: 'extendSelectionTo', row, column })
+return
+}
+workbook.execute({
+type: 'selectRange',
+sheetId,
+start: { row, column },
+end: { row, column },
+active: { row, column },
+append: options?.append,
+})
+}}
+onDraftChange={(value) =>
+workbook.execute({ type: 'updateDraft', draft: value })
+}
+onBeginEdit={(intent) =>
+workbook.execute({ type: 'startEditing', intent })
+}
+onCommit={(move) =>
+workbook.execute({ type: 'commitEditing', move })
+}
+onCancelEdit={() =>
+workbook.execute({ type: 'cancelEditing' })
+}
+onAutofill={(endRow, endColumn) =>
+workbook.execute({
+type: 'autofillSelection',
+endRow,
+endColumn,
+})
+}
+/>
+</div>
+)
+}`}
+/>
+
+The grid defaults to a logical extent of 300 rows and 40 columns. Pass `rowCount` and `columnCount` when your host needs different limits.
+
+Its parent must have a bounded height. Without one, virtualization cannot establish the intended scrollport.
+
+## Add a formula bar
+
+The formula bar edits the same core draft as the inline cell editor:
+
+```tsx
+const selection = workbook.getSelection()
+const active = selection?.active
+const cell =
+  sheetId && active
+    ? workbook.getCell(sheetId, active.row, active.column)
+    : undefined
+
+const formulaBarValue =
+  editor.status === 'editing'
+    ? editor.draft
+    : cell?.formula ?? ''
+
+<input
+  data-testid="formula-bar"
+  value={formulaBarValue}
+  placeholder="Enter a value or =formula"
+  onFocus={() =>
+    workbook.execute({
+      type: 'startEditing',
+      draft: cell?.formula,
+      intent: 'edit',
+    })
+  }
+  onChange={(event) =>
+    workbook.execute({
+      type: 'updateDraft',
+      draft: event.target.value,
+    })
+  }
+  onKeyDown={(event) => {
+    if (event.key === 'Enter') {
+      workbook.execute({ type: 'commitEditing', move: 'down' })
+    }
+    if (event.key === 'Escape') {
+      workbook.execute({ type: 'cancelEditing' })
+    }
+  }}
+/>
+```
+
+Hint: formula source and cell display are different. The bar should show `=A1*2`; the cell should show the computed result.
+
+## Save a session
+
+Wait for hydration, restore the saved snapshot if one exists, and commit only persistable domain changes.
+
+<SnippetPreview
+  title="IndexedDB session"
+  description="Hydrate first, then restore or seed and autosave serialized changes."
+  language="ts"
+  code={`import { createWorkbook, loadWorkbook } from '@spreadish/core'
+import {
+  createIndexedDBStorageAdapter,
+  createNoopSyncTransport,
+  createWorkbookSession,
+  isPersistableDomainEvent,
+} from '@spreadish/sometic'
+
+const session = createWorkbookSession({
+storage: createIndexedDBStorageAdapter({ dbName: 'my-app' }),
+key: 'workbook.main',
+workbookId: 'wb_main',
+sync: createNoopSyncTransport(),
+})
+
+await session.hydrated
+
+const snapshot = session.getSnapshot()
+const workbook = snapshot.serialized
+? loadWorkbook(snapshot.serialized)
+: createWorkbook({
+name: 'Untitled Workbook',
+sheetName: 'Sheet 1',
+})
+
+workbook.subscribe((event) => {
+if (!isPersistableDomainEvent(event)) return
+void session.commitSerialized(workbook.serialize())
+})`}
+/>
+
+Selection, draft typing, clipboard changes, and history notifications should not trigger storage writes.
+
+## Multi-workbook hosts
+
+Use `createWorkbookWorkspace` when your application needs a catalog of independent workbooks.
+
+A workspace owns:
+
+- One persisted catalog
+- One active `WorkbookSession`
+- Create, switch, rename, and remove operations
+- A guard that prevents deleting the final workbook
+
+The playground header dropdown demonstrates this API. See [Persistence and workspaces](/docs/persistence) for the complete switching pattern.
+
+## Integration checklist
+
+Before considering the first integration complete, verify that:
+
+- `@spreadish/react/styles.css` is imported once
+- The workbook is created once, not during every render
+- React subscribes to workbook events
+- The grid has a bounded-height parent
+- Selection and edits dispatch core commands
+- Formula source remains visible in the formula bar
+- The grid displays computed formula values
+- IndexedDB hydration finishes before seeding a workbook
+- Persistence filters non-persistable events
+- Subscriptions and sessions are disposed during teardown
+- Undo and redo update the rendered grid
+- Reloading restores the saved workbook
+
+## Common mistakes
+
+### The grid is blank or has zero height
+
+Give its parent an explicit height:
+
+```tsx
+<div style={{ height: 600 }}>
+    <SpreadsheetGrid {...props} />
+</div>
+```
+
+### The grid looks unstyled
+
+Import the package stylesheet from your application root:
+
+```tsx
+import '@spreadish/react/styles.css';
+```
+
+### Commands run, but React does not update
+
+Subscribe to workbook events and trigger a render. A `Workbook` is an external state object; React does not observe it automatically.
+
+### Edits disappear while typing
+
+Pass `editor.draft` back as the controlled `draft` prop and dispatch `updateDraft` from `onDraftChange`.
+
+### Formulas display as source text
+
+Use the computed cell value for grid display. Keep `cell.formula` for the formula bar and editing flow.
+
+### The saved workbook is overwritten on startup
+
+Await `session.hydrated` before deciding whether to call `loadWorkbook` or `createWorkbook`.
+
+### IndexedDB does not work in tests or server rendering
+
+Create browser storage only in a browser environment. Use `createMemoryStorage()` for unit tests.
+
+### Clipboard shortcuts fail
+
+Browser clipboard access may require HTTPS, permission, and a user gesture. Keep core clipboard commands available and catch browser API failures.
+
+### The workbook resets on every render
+
+Create it with `useMemo`, a lazy state initializer, or outside the component. Do not call `createWorkbook()` directly in the render body.
+
+### Selection saves continuously
+
+Filter events with `isPersistableDomainEvent`. `selectionChanged` is deliberately non-persistable.
+
+## Try the live demo
+
+Open the [playground](/playground). Use the brand mark to return to the docs home page.
+
+## Next
+
+- [Architecture](/docs/architecture): package boundaries and host responsibilities
+- [Core model](/docs/core-model): sparse IDs, commands, and serialization
+- [React renderer](/docs/react): complete grid props and interaction patterns
+- [Persistence and workspaces](/docs/persistence): sessions, storage, and catalogs
+- [Integration recipes](/docs/recipes): undo, styles, imports, clipboard, and sheets
+- [Formulas](/docs/formulas): parsing, recalculation, and formula display

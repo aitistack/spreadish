@@ -1,0 +1,37 @@
+# Full-repo ignore rules for the development branch (and for main after merge).
+# Activate with: cp .gitignore.development .gitignore
+
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.turbo/
+.cache/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+*.log
+MASTER_PROMPT.md
+logo.png
+.tmp-ui/
+.tmp-pack-*/
+apps/playground/.tmp-*.png
+.cursor/
+.vscode/
+.idea/
+.cursorrules
+.cursorignore.local
+docs/
+.cursorignore
+.cursorindexignore
+.cursorindexingignore
+AGENTS.md
+MASTER_PROMPT.md
+playground.png
+icon.png
+logo.png

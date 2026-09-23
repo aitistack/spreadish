@@ -1,0 +1,10 @@
+# Bootstrap: main tracks only community files until development merges.
+# On the development branch, replace this file with .gitignore.development:
+#   cp .gitignore.development .gitignore
+/*
+!/.gitignore
+!/.gitignore.development
+!/README.md
+!/CONTRIBUTING.md
+!/SECURITY.md
+!/LICENSE

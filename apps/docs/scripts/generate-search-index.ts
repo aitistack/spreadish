@@ -265,7 +265,12 @@ export type SearchIndexEntry = {
 export const SEARCH_INDEX: readonly SearchIndexEntry[] = ${JSON.stringify(all, null, 4)} as const;
 `;
 
-await writeFile(outFile, body);
+const prettier = await import('prettier');
+const formatted = await prettier.format(body, {
+    filepath: outFile,
+    ...(await prettier.resolveConfig(outFile)),
+});
+await writeFile(outFile, formatted);
 console.log(`search-index: ${all.length} entries -> ${path.relative(docsRoot, outFile)}`);
 
 // sanity: ensure content dir exists

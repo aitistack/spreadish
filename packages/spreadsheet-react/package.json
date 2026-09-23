@@ -1,6 +1,6 @@
 {
     "name": "@spreadish/react",
-    "version": "0.0.0",
+    "version": "0.1.0",
     "description": "Virtualized React spreadsheet grid for Spreadish.",
     "license": "MIT",
     "author": "Spreadish contributors",

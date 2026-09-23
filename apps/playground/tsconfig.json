@@ -1,0 +1,15 @@
+{
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "noEmit": true,
+        "jsx": "react-jsx",
+        "types": ["vite/client"],
+        "paths": {
+            "@spreadish/core": ["../../packages/spreadsheet-core/src/index.ts"],
+            "@spreadish/react": ["../../packages/spreadsheet-react/src/index.ts"],
+            "@spreadish/sometic": ["../../packages/spreadsheet-sometic/src/index.ts"],
+            "@spreadish/utils": ["../../packages/spreadsheet-utils/src/index.ts"]
+        }
+    },
+    "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"]
+}

@@ -1,0 +1,148 @@
+:root {
+    --se-grid-bg: #ffffff;
+    --se-grid-border: #e5e7eb;
+    --se-grid-header-bg: #f3f4f6;
+    --se-grid-header-active-bg: #ecfdf5;
+    --se-grid-header-fg: #6b7280;
+    --se-grid-header-active-fg: #059669;
+    --se-grid-selection: rgb(167 243 208 / 70%);
+    --se-grid-active: #10b981;
+    --se-grid-cut: #059669;
+    --se-grid-cell-fg: #111827;
+    --se-grid-cell-error: #b91c1c;
+    --se-grid-font: 13px;
+}
+
+.seGrid {
+    position: relative;
+    height: 100%;
+    min-height: 0;
+    overflow: auto;
+    background: var(--se-grid-bg);
+    outline: none;
+}
+
+.seGridCanvas {
+    position: relative;
+}
+
+.seGridCorner {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 30;
+    box-sizing: border-box;
+    border-right: 1px solid var(--se-grid-border);
+    border-bottom: 1px solid var(--se-grid-border);
+    background: var(--se-grid-header-bg);
+}
+
+.seGridColHeader,
+.seGridRowHeader {
+    position: absolute;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid var(--se-grid-border);
+    border-bottom: 1px solid var(--se-grid-border);
+    background: var(--se-grid-header-bg);
+    color: var(--se-grid-header-fg);
+    font-size: 11px;
+    font-weight: 500;
+    user-select: none;
+}
+
+.seGridColHeader[data-active='true'],
+.seGridRowHeader[data-active='true'] {
+    background: var(--se-grid-header-active-bg);
+    color: var(--se-grid-header-active-fg);
+}
+
+.seGridCell {
+    position: absolute;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    border-right: 1px solid var(--se-grid-border);
+    border-bottom: 1px solid var(--se-grid-border);
+    padding: 0 8px;
+    color: var(--se-grid-cell-fg);
+    font-size: var(--se-grid-font);
+    line-height: 1.2;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: cell;
+    background: var(--se-cell-fill, var(--se-grid-bg));
+}
+
+/* Selection wash layers over any cell fill instead of replacing it. */
+.seGridCell[data-in-range='true'] {
+    background: linear-gradient(var(--se-grid-selection), var(--se-grid-selection))
+        var(--se-cell-fill, var(--se-grid-bg));
+}
+
+.seGridCell[data-error] {
+    color: var(--se-grid-cell-error);
+}
+
+.seGridCell[data-frozen-row='true'],
+.seGridCell[data-frozen-column='true'] {
+    box-shadow: inset 0 0 0 0 transparent;
+}
+
+.seGridCell[data-frozen-row='true'] {
+    border-bottom-color: var(--se-grid-active);
+}
+
+.seGridCell[data-frozen-column='true'] {
+    border-right-color: var(--se-grid-active);
+}
+
+.seGridCell[data-fill-preview='true'] {
+    background: linear-gradient(rgb(16 185 129 / 12%), rgb(16 185 129 / 12%))
+        var(--se-cell-fill, var(--se-grid-bg));
+}
+
+.seGridActiveRing {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    outline: 2px solid var(--se-grid-active);
+    outline-offset: -1px;
+}
+
+.seGridFillHandle {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 6;
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: 0;
+    translate: 50% 50%;
+    background: var(--se-grid-active);
+    cursor: crosshair;
+    pointer-events: auto;
+}
+
+.seGridFillHandle:hover {
+    width: 10px;
+    height: 10px;
+}
+
+.seGridEditor {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    padding: 0 8px;
+    background: #fff;
+    font-size: var(--se-grid-font);
+    outline: 2px solid var(--se-grid-active);
+}

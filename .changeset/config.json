@@ -1,0 +1,24 @@
+{
+    "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
+    "changelog": "@changesets/cli/changelog",
+    "commit": false,
+    "fixed": [
+        [
+            "@spreadish/utils",
+            "@spreadish/formula-engine",
+            "@spreadish/core",
+            "@spreadish/react",
+            "@spreadish/sometic"
+        ]
+    ],
+    "linked": [],
+    "access": "public",
+    "baseBranch": "main",
+    "updateInternalDependencies": "patch",
+    "ignore": [
+        "@spreadish/docs",
+        "@spreadish/e2e-host",
+        "@spreadish/playground",
+        "@spreadish/testing"
+    ]
+}

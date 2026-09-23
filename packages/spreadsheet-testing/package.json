@@ -1,0 +1,28 @@
+{
+    "name": "@spreadish/testing",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "bun": "./src/index.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "vite build && tsc -p tsconfig.build.json --emitDeclarationOnly",
+        "typecheck": "tsc -p tsconfig.json --noEmit"
+    },
+    "dependencies": {
+        "@spreadish/core": "workspace:*",
+        "@spreadish/formula-engine": "workspace:*",
+        "@spreadish/react": "workspace:*",
+        "@spreadish/sometic": "workspace:*",
+        "@spreadish/utils": "workspace:*"
+    }
+}

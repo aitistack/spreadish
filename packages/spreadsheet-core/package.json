@@ -1,0 +1,49 @@
+{
+    "name": "@spreadish/core",
+    "version": "0.0.0",
+    "description": "Framework-independent sparse spreadsheet workbook engine for Spreadish.",
+    "license": "MIT",
+    "author": "Spreadish contributors",
+    "homepage": "https://spreadish.aitistack.com/docs/api/core",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/aitistack/spreadsheet-engine.git",
+        "directory": "packages/spreadsheet-core"
+    },
+    "bugs": {
+        "url": "https://github.com/aitistack/spreadsheet-engine/issues"
+    },
+    "keywords": [
+        "spreadsheet",
+        "spreadish",
+        "workbook",
+        "commands"
+    ],
+    "type": "module",
+    "sideEffects": false,
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "LICENSE",
+        "README.md"
+    ],
+    "publishConfig": {
+        "access": "public",
+        "provenance": true
+    },
+    "scripts": {
+        "build": "vite build && tsc -p tsconfig.build.json --emitDeclarationOnly",
+        "typecheck": "tsc -p tsconfig.json --noEmit",
+        "prepack": "bun run build"
+    },
+    "dependencies": {
+        "@spreadish/formula-engine": "workspace:*",
+        "@spreadish/utils": "workspace:*"
+    }
+}

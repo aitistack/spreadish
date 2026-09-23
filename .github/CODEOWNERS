@@ -1,0 +1,10 @@
+# Replace @MaitisamY with the real GitHub owner/team before enabling branch protection.
+* @MaitisamY
+packages/spreadsheet-core/ @MaitisamY
+packages/formula-engine/ @MaitisamY
+packages/spreadsheet-react/ @MaitisamY
+packages/spreadsheet-sometic/ @MaitisamY
+packages/spreadsheet-utils/ @MaitisamY
+packages/spreadsheet-testing/ @MaitisamY
+.github/ @MaitisamY
+docs/ @MaitisamY

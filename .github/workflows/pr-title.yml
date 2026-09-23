@@ -1,0 +1,18 @@
+name: PR Title
+
+on:
+    pull_request:
+        types: [opened, edited, synchronize]
+
+jobs:
+    validate:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/github-script@v7
+              with:
+                  script: |
+                      const title = context.payload.pull_request.title;
+                      const pattern = /^(feat|fix|refactor|perf|test|docs|chore|build|ci)(\(.+\))?: .+/;
+                      if (!pattern.test(title)) {
+                          core.setFailed(`Invalid PR title: ${title}`);
+                      }

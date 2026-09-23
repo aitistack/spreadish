@@ -35,3 +35,5 @@ MASTER_PROMPT.md
 playground.png
 icon.png
 logo.png
+.agents/
+.cursor/

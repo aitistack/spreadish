@@ -1,0 +1,27 @@
+name: E2E
+
+on:
+    pull_request:
+        branches: [main, development]
+    push:
+        branches: [development]
+
+concurrency:
+    group: e2e-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    playwright:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - run: bun install --frozen-lockfile
+            - run: bun run e2e:install
+            - run: bun run build
+            - run: bun run build:playground
+            - run: bun run test:e2e

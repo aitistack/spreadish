@@ -1,0 +1,45 @@
+name: Publish
+
+on:
+    release:
+        types: [published]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    id-token: write
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        environment: npm-production
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  registry-url: https://registry.npmjs.org
+                  package-manager-cache: false
+
+            - run: bun install --frozen-lockfile
+            - run: bun run format:check
+            - run: bun run lint
+            - run: bun run typecheck
+            - run: bun run test:unit
+            - run: bun run test:coverage
+            - run: bun run check:circular
+            - run: bun run build
+            - run: bun run package:check
+            - run: bun run package:smoke
+
+            # npm Trusted Publishing via GitHub Actions OIDC (no long-lived token).
+            # Configure each package's Trusted Publisher to this workflow + npm-production.
+            - name: Publish packages
+              run: bunx changeset publish
+              env:
+                  NPM_CONFIG_PROVENANCE: true

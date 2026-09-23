@@ -15,7 +15,7 @@ jobs:
             - uses: actions/checkout@v6
             # Public repos should support this once Dependency graph is on; do not
             # block merges if the org/repo has not enabled the feature yet.
-            - uses: actions/dependency-review-action@v4
+            - uses: actions/dependency-review-action@v5
               continue-on-error: true
               with:
                   fail-on-severity: high

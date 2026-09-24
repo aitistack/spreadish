@@ -258,8 +258,15 @@ function wrapSvgText(text: string, maxChars: number): string[] {
     return lines.slice(0, 3);
 }
 
-async function generateOgImage(page: SitePage, outPath: string, iconBuffer: Buffer): Promise<void> {
-    const titleLines = wrapSvgText(page.title, 28);
+async function generateOgImage(
+    page: SitePage,
+    outPath: string,
+    iconBuffer: Buffer,
+    wordmarkBuffer?: Buffer,
+): Promise<void> {
+    // Home OG uses the full brand wordmark as the page title (not the small header logo).
+    const useWordmarkTitle = Boolean(wordmarkBuffer) && page.path === '/';
+    const titleLines = useWordmarkTitle ? [] : wrapSvgText(page.title, 28);
     const descLines = wrapSvgText(page.description, 52);
     const titleSvg = titleLines
         .map(
@@ -267,10 +274,12 @@ async function generateOgImage(page: SitePage, outPath: string, iconBuffer: Buff
                 `<text x="72" y="${210 + index * 58}" fill="#111827" font-size="48" font-weight="700" font-family="Arial, Helvetica, sans-serif">${escapeHtml(line)}</text>`,
         )
         .join('');
+    // Wordmark (~480×160) sits where the heading was; push description down for home.
+    const descTop = useWordmarkTitle ? 400 : 360;
     const descSvg = descLines
         .map(
             (line, index) =>
-                `<text x="72" y="${360 + index * 32}" fill="#6b7280" font-size="24" font-family="Arial, Helvetica, sans-serif">${escapeHtml(line)}</text>`,
+                `<text x="72" y="${descTop + index * 32}" fill="#6b7280" font-size="24" font-family="Arial, Helvetica, sans-serif">${escapeHtml(line)}</text>`,
         )
         .join('');
 
@@ -293,10 +302,16 @@ async function generateOgImage(page: SitePage, outPath: string, iconBuffer: Buff
 
     const base = sharp(Buffer.from(svg));
     const icon = await sharp(iconBuffer).resize(72, 72).png().toBuffer();
-    await base
-        .composite([{ input: icon, left: 72, top: 52 }])
-        .png()
-        .toFile(outPath);
+    const layers: sharp.OverlayOptions[] = [{ input: icon, left: 72, top: 52 }];
+    if (useWordmarkTitle && wordmarkBuffer) {
+        // Keep aspect of spreadish.png (2172×724); place as the page title/heading.
+        const wordmark = await sharp(wordmarkBuffer)
+            .resize(480, 160, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+            .png()
+            .toBuffer();
+        layers.push({ input: wordmark, left: 72, top: 175 });
+    }
+    await base.composite(layers).png().toFile(outPath);
 }
 
 async function generateOgImages(): Promise<void> {
@@ -320,14 +335,34 @@ async function generateOgImages(): Promise<void> {
         throw new Error(`generate-seo: missing brand icon (tried ${iconCandidates.join(', ')})`);
     }
 
+    const wordmarkCandidates = [
+        path.join(docsRoot, 'src/assets/previews/spreadish.png'),
+        path.join(docsRoot, 'src/assets/spreadish.png'),
+        path.join(publicDir, 'spreadish.png'),
+    ];
+    let wordmarkBuffer: Buffer | null = null;
+    for (const candidate of wordmarkCandidates) {
+        try {
+            wordmarkBuffer = Buffer.from(await readFile(candidate));
+            break;
+        } catch {
+            // try next
+        }
+    }
+    if (!wordmarkBuffer) {
+        throw new Error(
+            `generate-seo: missing brand wordmark (tried ${wordmarkCandidates.join(', ')})`,
+        );
+    }
+
     for (const page of SITE_PAGES) {
         const slug = ogSlug(page);
-        await generateOgImage(page, path.join(ogDir, `${slug}.png`), iconBuffer);
+        await generateOgImage(page, path.join(ogDir, `${slug}.png`), iconBuffer, wordmarkBuffer);
     }
 
     // Site-wide default
     const home = SITE_PAGES.find((p) => p.path === '/')!;
-    await generateOgImage(home, path.join(publicDir, 'og.png'), iconBuffer);
+    await generateOgImage(home, path.join(publicDir, 'og.png'), iconBuffer, wordmarkBuffer);
 }
 
 function injectHead(html: string, page: SitePage): string {

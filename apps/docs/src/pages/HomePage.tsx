@@ -14,12 +14,16 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import previewFormulaUrl from '../assets/previews/preview-formula.png';
+import previewFormula400Url from '../assets/optimized/preview-formula-400.png';
+import previewFormula400WebpUrl from '../assets/optimized/preview-formula-400.webp';
+import previewFormulaUrl from '../assets/optimized/preview-formula-800.png';
+import previewFormulaWebpUrl from '../assets/optimized/preview-formula-800.webp';
+import logoPngUrl from '../assets/optimized/spreadish-480.png';
+import logoWebpUrl from '../assets/optimized/spreadish-480.webp';
 import { CopyPromptButton } from '../components/CopyPromptButton';
 import { InstallTabs } from '../components/InstallTabs';
 import { SiteFooter } from '../components/SiteFooter';
 import { SiteHeader } from '../components/SiteHeader';
-import logo from '../assets/previews/spreadish.png';
 
 const packages = [
     {
@@ -132,304 +136,331 @@ export function HomePage() {
             <div className="relative z-10 flex min-h-[100dvh] flex-col">
                 <SiteHeader />
 
-                <section className="border-b border-[var(--pg-border)]">
-                    <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-20 md:flex-row md:items-center md:py-28">
-                        <div className="min-w-0 flex-1">
-                            <div className="mb-5">
-                                <img
-                                    src={logo}
-                                    alt="Spreadish"
-                                    width={240}
-                                    height={80}
-                                    className="h-auto w-full max-w-[min(100%,240px)] object-contain object-left md:max-w-[min(100%,240px)]"
-                                    draggable={false}
-                                />
-                            </div>
-                            <h1 className="spreadish-hero-title max-w-xl text-3xl text-[var(--pg-text)] md:text-5xl">
-                                Ship a spreadsheet in your React app without owning Excel.
-                            </h1>
-                            <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-[var(--pg-muted)] md:text-base">
-                                Sparse workbooks, deterministic commands, formulas, and{' '}
-                                <Link
-                                    to="https://sometic.dev"
-                                    target="_blank"
-                                    className="text-[var(--pg-accent)] hover:underline"
-                                >
-                                    Sometic
-                                </Link>
-                                -backed persistence. You keep the chrome. Spreadish keeps the
-                                document truth.
-                            </p>
-                            <div className="mt-8 flex flex-wrap gap-3">
-                                <Link
-                                    to="/docs/getting-started"
-                                    className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-[var(--pg-accent)] px-5 text-[14px] font-semibold text-[var(--pg-bg)] shadow-[0_4px_14px_rgb(16_185_129_/_35%)] hover:bg-[var(--pg-accent-hover)]"
-                                >
-                                    <Rocket
-                                        className="h-4 w-4"
-                                        aria-hidden="true"
-                                        strokeWidth={2}
-                                    />
-                                    Get Started
-                                </Link>
-                                <Link
-                                    to="/playground"
-                                    className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-[var(--pg-border)] bg-white px-5 text-[14px] font-semibold text-[var(--pg-text)] shadow-[0_1px_2px_rgb(15_23_42_/_6%)] hover:border-[var(--pg-accent)]"
-                                >
-                                    <LayoutGrid
-                                        className="h-4 w-4"
-                                        aria-hidden="true"
-                                        strokeWidth={2}
-                                    />
-                                    Open Playground
-                                </Link>
-                                <CopyPromptButton variant="hero" />
-                            </div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <div className="rounded-[14px] border border-[var(--pg-border)] bg-white/90 p-4 shadow-[0_16px_40px_rgb(15_23_42_/_10%)] backdrop-blur-sm">
-                                <p className="mb-3 text-[12px] font-semibold tracking-wide text-[var(--pg-muted)] uppercase">
-                                    Install
-                                </p>
-                                <InstallTabs />
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section className="mx-auto max-w-6xl border-b border-[var(--pg-border)] px-4 py-16">
-                    <div className="grid w-full gap-8 md:grid-cols-[minmax(0,13fr)_minmax(0,7fr)] md:items-center md:gap-10">
-                        <div className="min-w-0">
-                            <h2 className="spreadish-section-title text-2xl text-[var(--pg-text)] md:text-[1.75rem]">
-                                Tired of bolting a grid onto a dense matrix?
-                            </h2>
-                            <p className="mt-3 text-[15px] leading-relaxed text-[var(--pg-muted)]">
-                                Most spreadsheet UIs treat empty space like data. You pay for it in
-                                memory, undo stacks, and brittle indexes. Spreadish keeps a sparse
-                                document: only the cells, rows, and columns that exist. Indexes are
-                                display positions. Identity lives in stable IDs. Empty cells stay
-                                addressable without inventing a wall of nulls.
-                            </p>
-                        </div>
-                        <aside
-                            className="min-w-0 rounded-[12px] border border-[var(--pg-border)] bg-white p-5 shadow-[0_4px_16px_rgb(15_23_42_/_5%)]"
-                            aria-label="Sparse model at a glance"
-                        >
-                            <p className="text-[12px] font-semibold tracking-wide text-[var(--pg-accent-hover)] uppercase">
-                                Sparse by default
-                            </p>
-                            <ul className="mt-4 space-y-3">
-                                {[
-                                    {
-                                        label: 'Stored',
-                                        value: 'Only cells that exist',
-                                    },
-                                    {
-                                        label: 'Index',
-                                        value: 'Display order, not identity',
-                                    },
-                                    {
-                                        label: 'Empty',
-                                        value: 'Addressable. Never materialized!',
-                                    },
-                                ].map((row) => (
-                                    <li
-                                        key={row.label}
-                                        className="flex items-start gap-3 border-t border-[var(--pg-border)] pt-3 first:border-t-0 first:pt-0"
+                <main>
+                    <section className="border-b border-[var(--pg-border)]">
+                        <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-20 md:flex-row md:items-center md:py-28">
+                            <div className="min-w-0 flex-1">
+                                <div className="mb-5">
+                                    <picture>
+                                        <source srcSet={logoWebpUrl} type="image/webp" />
+                                        <img
+                                            src={logoPngUrl}
+                                            alt="Spreadish"
+                                            width={240}
+                                            height={80}
+                                            fetchPriority="high"
+                                            decoding="async"
+                                            className="h-auto w-full max-w-[min(100%,240px)] object-contain object-left"
+                                            draggable={false}
+                                        />
+                                    </picture>
+                                </div>
+                                <h1 className="spreadish-hero-title max-w-xl text-3xl text-[var(--pg-text)] md:text-5xl">
+                                    Ship a spreadsheet in your React app without owning Excel.
+                                </h1>
+                                <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-[var(--pg-muted)] md:text-base">
+                                    Sparse workbooks, deterministic commands, formulas, and{' '}
+                                    <Link
+                                        to="https://sometic.dev"
+                                        target="_blank"
+                                        className="font-semibold text-[var(--pg-accent-hover)] hover:underline"
                                     >
-                                        <span className="mt-0.5 inline-flex h-6 min-w-16 items-center justify-center rounded-[6px] bg-[var(--pg-accent-soft)] px-2 font-mono text-[11px] font-semibold text-[var(--pg-accent-hover)]">
-                                            {row.label}
-                                        </span>
-                                        <span className="text-[14px] leading-snug text-[var(--pg-text)]">
-                                            {row.value}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </aside>
-                    </div>
-                </section>
-
-                <section className="mx-auto max-w-6xl border-b border-[var(--pg-border)] px-4 py-16">
-                    <h2 className="spreadish-section-title text-2xl text-[var(--pg-text)]">
-                        How the system holds
-                    </h2>
-                    <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-[var(--pg-muted)]">
-                        One core model. Thin adapters. Your design system stays yours.
-                    </p>
-                    <div className="mt-8 grid gap-4 md:grid-cols-3">
-                        {systemHold.map((item) => {
-                            const Icon = item.icon;
-                            return (
-                                <div
-                                    key={item.title}
-                                    className="rounded-[12px] border border-[var(--pg-border)] bg-white p-5 shadow-[0_4px_16px_rgb(15_23_42_/_5%)]"
-                                >
-                                    <div className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] bg-[var(--pg-accent-soft)] text-[var(--pg-accent-hover)]">
-                                        <Icon
+                                        Sometic
+                                    </Link>
+                                    -backed persistence. You keep the chrome. Spreadish keeps the
+                                    document truth.
+                                </p>
+                                <div className="mt-8 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+                                    <Link
+                                        to="/docs/getting-started"
+                                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--pg-accent-hover)] px-5 text-[14px] font-semibold text-white shadow-[0_4px_14px_rgb(4_120_87_/_35%)] hover:bg-[#065f46] sm:w-auto"
+                                    >
+                                        <Rocket
                                             className="h-4 w-4"
                                             aria-hidden="true"
                                             strokeWidth={2}
                                         />
-                                    </div>
-                                    <h3 className="spreadish-card-title mt-3 text-[15px] text-[var(--pg-text)]">
-                                        {item.title}
-                                    </h3>
-                                    <p className="mt-2 text-[14px] leading-relaxed text-[var(--pg-muted)]">
-                                        {item.body}
-                                    </p>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </section>
-
-                <section className="mx-auto max-w-6xl border-b border-[var(--pg-border)] px-4 py-16">
-                    <h2 className="spreadish-section-title text-2xl text-[var(--pg-text)]">
-                        Packages that stay in their lane
-                    </h2>
-                    <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                        {packages.map((pkg) => {
-                            const Icon = pkg.icon;
-                            return (
-                                <Link
-                                    key={pkg.name}
-                                    to={pkg.href}
-                                    className="rounded-[12px] border border-[var(--pg-border)] bg-white p-4 shadow-[0_2px_8px_rgb(15_23_42_/_4%)] transition-colors hover:border-[var(--pg-accent)]"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Icon
-                                            className="h-4 w-4 text-[var(--pg-accent-hover)]"
+                                        Get Started
+                                    </Link>
+                                    <Link
+                                        to="/playground"
+                                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[var(--pg-border)] bg-white px-5 text-[14px] font-semibold text-[var(--pg-text)] shadow-[0_1px_2px_rgb(15_23_42_/_6%)] hover:border-[var(--pg-accent)] sm:w-auto"
+                                    >
+                                        <LayoutGrid
+                                            className="h-4 w-4"
                                             aria-hidden="true"
                                             strokeWidth={2}
                                         />
-                                        <div className="spreadish-package-name text-[13px] font-semibold text-[var(--pg-accent-hover)]">
-                                            {pkg.name}
-                                        </div>
+                                        Open Playground
+                                    </Link>
+                                    <div className="col-span-2 sm:col-span-1 sm:contents">
+                                        <CopyPromptButton variant="hero" />
                                     </div>
-                                    <p className="mt-1.5 text-[14px] leading-relaxed text-[var(--pg-muted)]">
-                                        {pkg.body}
+                                </div>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <div className="rounded-[14px] border border-[var(--pg-border)] bg-white/90 p-4 shadow-[0_16px_40px_rgb(15_23_42_/_10%)] backdrop-blur-sm">
+                                    <p className="mb-3 text-[12px] font-semibold tracking-wide text-[var(--pg-muted)] uppercase">
+                                        Install
                                     </p>
-                                </Link>
-                            );
-                        })}
-                    </div>
-                </section>
+                                    <InstallTabs />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
 
-                <section className="mx-auto max-w-6xl border-b border-[var(--pg-border)] px-4 py-16">
-                    <div className="overflow-hidden rounded-[16px] border border-[var(--pg-border)] bg-white shadow-[0_12px_36px_rgb(15_23_42_/_8%)]">
-                        <div className="grid gap-0 lg:grid-cols-2">
-                            <div className="flex flex-col justify-center px-6 py-10 md:px-10 md:py-12">
-                                <p className="inline-flex items-center gap-1.5 text-[12px] font-semibold tracking-wide text-[var(--pg-accent-hover)] uppercase">
-                                    <LayoutGrid
-                                        className="h-3.5 w-3.5"
-                                        aria-hidden="true"
-                                        strokeWidth={2}
-                                    />
-                                    Live demo
-                                </p>
-                                <h2 className="spreadish-section-title mt-2 text-2xl text-[var(--pg-text)] md:text-3xl">
-                                    See it before you wire it
+                    <section className="mx-auto max-w-6xl border-b border-[var(--pg-border)] px-4 py-16">
+                        <div className="grid w-full gap-8 md:grid-cols-[minmax(0,13fr)_minmax(0,7fr)] md:items-center md:gap-10">
+                            <div className="min-w-0">
+                                <h2 className="spreadish-section-title text-2xl text-[var(--pg-text)] md:text-[1.75rem]">
+                                    Tired of bolting a grid onto a dense matrix?
                                 </h2>
                                 <p className="mt-3 text-[15px] leading-relaxed text-[var(--pg-muted)]">
-                                    The playground is the same product shell your users will
-                                    recognize: formula bar, format strip, sheet tabs, undo,
-                                    autosave, and a multi-workbook switcher. No sidebars. Full-width
-                                    grid. Commands under the chrome.
+                                    Most spreadsheet UIs treat empty space like data. You pay for it
+                                    in memory, undo stacks, and brittle indexes. Spreadish keeps a
+                                    sparse document: only the cells, rows, and columns that exist.
+                                    Indexes are display positions. Identity lives in stable IDs.
+                                    Empty cells stay addressable without inventing a wall of nulls.
                                 </p>
-                                <ul className="mt-5 space-y-2 text-[14px] text-[var(--pg-text)]">
+                            </div>
+                            <aside
+                                className="min-w-0 rounded-[12px] border border-[var(--pg-border)] bg-white p-5 shadow-[0_4px_16px_rgb(15_23_42_/_5%)]"
+                                aria-label="Sparse model at a glance"
+                            >
+                                <p className="text-[12px] font-semibold tracking-wide text-[var(--pg-accent-hover)] uppercase">
+                                    Sparse by default
+                                </p>
+                                <ul className="mt-4 space-y-3">
                                     {[
-                                        'Type formulas in the bar and watch cells show computed values',
-                                        'Create and switch workbooks through the header catalog',
-                                        'Click the brand mark anytime to return to this docs story',
-                                    ].map((line) => (
-                                        <li key={line} className="flex gap-2">
-                                            <Check
-                                                className="mt-0.5 h-4 w-4 shrink-0 text-[var(--pg-accent)]"
-                                                aria-hidden="true"
-                                                strokeWidth={2}
-                                            />
-                                            {line}
+                                        {
+                                            label: 'Stored',
+                                            value: 'Only cells that exist',
+                                        },
+                                        {
+                                            label: 'Index',
+                                            value: 'Display order, not identity',
+                                        },
+                                        {
+                                            label: 'Empty',
+                                            value: 'Addressable. Never materialized!',
+                                        },
+                                    ].map((row) => (
+                                        <li
+                                            key={row.label}
+                                            className="flex items-start gap-3 border-t border-[var(--pg-border)] pt-3 first:border-t-0 first:pt-0"
+                                        >
+                                            <span className="mt-0.5 inline-flex h-6 min-w-16 items-center justify-center rounded-[6px] bg-[var(--pg-accent-soft)] px-2 font-mono text-[11px] font-semibold text-[var(--pg-accent-hover)]">
+                                                {row.label}
+                                            </span>
+                                            <span className="text-[14px] leading-snug text-[var(--pg-text)]">
+                                                {row.value}
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>
-                                <div className="mt-8 flex flex-wrap gap-3">
-                                    <Link
-                                        to="/playground"
-                                        className="inline-flex h-11 items-center rounded-[10px] bg-[var(--pg-accent)] px-5 text-[14px] font-semibold text-[var(--pg-bg)] hover:bg-[var(--pg-accent-hover)]"
-                                    >
-                                        Open the playground
-                                    </Link>
-                                    <Link
-                                        to="/docs/playground"
-                                        className="inline-flex h-11 items-center rounded-[10px] border border-[var(--pg-border)] bg-white px-5 text-[14px] font-semibold text-[var(--pg-text)] hover:border-[var(--pg-accent)]"
-                                    >
-                                        How the demo maps to APIs
-                                    </Link>
-                                </div>
-                            </div>
-                            <div className="border-t border-[var(--pg-border)] bg-[var(--pg-bg)] p-4 lg:border-t-0 lg:border-l">
-                                <img
-                                    src={previewFormulaUrl}
-                                    alt="Spreadish playground with formula bar showing =SUM(1,2,3) and computed cell value"
-                                    className="w-full rounded-[12px] border border-[var(--pg-border)] bg-white object-cover shadow-[0_4px_16px_rgb(15_23_42_/_8%)]"
-                                    loading="lazy"
-                                    draggable={false}
-                                />
-                                <p className="mt-3 mb-0 text-center text-[12px] text-[var(--pg-muted)]">
-                                    Real playground chrome captured from the live demo
-                                </p>
-                            </div>
+                            </aside>
                         </div>
-                    </div>
-                </section>
+                    </section>
 
-                <section className="mx-auto max-w-6xl px-4 py-16">
-                    <div className="max-w-2xl">
-                        <h2 className="text-2xl font-bold tracking-tight text-[var(--pg-text)]">
-                            Keep reading
+                    <section className="mx-auto max-w-6xl border-b border-[var(--pg-border)] px-4 py-16">
+                        <h2 className="spreadish-section-title text-2xl text-[var(--pg-text)]">
+                            How the system holds
                         </h2>
-                        <p className="mt-3 text-[15px] leading-relaxed text-[var(--pg-muted)]">
-                            Follow the story from install through architecture, recipes, and the
-                            React host surface. Each guide is written to teach, not to stub.
+                        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-[var(--pg-muted)]">
+                            One core model. Thin adapters. Your design system stays yours.
                         </p>
-                    </div>
-                    <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                        {keepReading.map((item) => {
-                            const Icon = item.icon;
-                            return (
-                                <Link
-                                    key={item.to}
-                                    to={item.to}
-                                    className="group relative overflow-hidden rounded-[14px] border border-[var(--pg-border)] bg-white p-5 shadow-[0_4px_16px_rgb(15_23_42_/_5%)] transition-all hover:border-[var(--pg-accent)] hover:shadow-[0_12px_28px_rgb(15_23_42_/_10%)]"
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <span className="inline-flex items-center gap-2 font-mono text-[12px] font-semibold tracking-wide text-[var(--pg-accent-hover)]">
+                        <div className="mt-8 grid gap-4 md:grid-cols-3">
+                            {systemHold.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <div
+                                        key={item.title}
+                                        className="rounded-[12px] border border-[var(--pg-border)] bg-white p-5 shadow-[0_4px_16px_rgb(15_23_42_/_5%)]"
+                                    >
+                                        <div className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] bg-[var(--pg-accent-soft)] text-[var(--pg-accent-hover)]">
                                             <Icon
                                                 className="h-4 w-4"
                                                 aria-hidden="true"
                                                 strokeWidth={2}
                                             />
-                                            {item.label}
-                                        </span>
-                                        <span
-                                            className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] bg-[var(--pg-accent-soft)] text-[var(--pg-accent-hover)] transition-transform group-hover:translate-x-0.5"
-                                            aria-hidden="true"
-                                        >
-                                            <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
-                                        </span>
+                                        </div>
+                                        <h3 className="spreadish-card-title mt-3 text-[15px] text-[var(--pg-text)]">
+                                            {item.title}
+                                        </h3>
+                                        <p className="mt-2 text-[14px] leading-relaxed text-[var(--pg-muted)]">
+                                            {item.body}
+                                        </p>
                                     </div>
-                                    <h3 className="mt-3 text-[16px] font-semibold tracking-tight text-[var(--pg-text)]">
-                                        {item.title}
-                                    </h3>
-                                    <p className="mt-2 text-[14px] leading-relaxed text-[var(--pg-muted)]">
-                                        {item.body}
+                                );
+                            })}
+                        </div>
+                    </section>
+
+                    <section className="mx-auto max-w-6xl border-b border-[var(--pg-border)] px-4 py-16">
+                        <h2 className="spreadish-section-title text-2xl text-[var(--pg-text)]">
+                            Packages that stay in their lane
+                        </h2>
+                        <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                            {packages.map((pkg) => {
+                                const Icon = pkg.icon;
+                                return (
+                                    <Link
+                                        key={pkg.name}
+                                        to={pkg.href}
+                                        className="rounded-[12px] border border-[var(--pg-border)] bg-white p-4 shadow-[0_2px_8px_rgb(15_23_42_/_4%)] transition-colors hover:border-[var(--pg-accent)]"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Icon
+                                                className="h-4 w-4 text-[var(--pg-accent-hover)]"
+                                                aria-hidden="true"
+                                                strokeWidth={2}
+                                            />
+                                            <div className="spreadish-package-name text-[13px] font-semibold text-[var(--pg-accent-hover)]">
+                                                {pkg.name}
+                                            </div>
+                                        </div>
+                                        <p className="mt-1.5 text-[14px] leading-relaxed text-[var(--pg-muted)]">
+                                            {pkg.body}
+                                        </p>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </section>
+
+                    <section className="mx-auto max-w-6xl border-b border-[var(--pg-border)] px-4 py-16">
+                        <div className="overflow-hidden rounded-[16px] border border-[var(--pg-border)] bg-white shadow-[0_12px_36px_rgb(15_23_42_/_8%)]">
+                            <div className="grid gap-0 lg:grid-cols-2">
+                                <div className="flex flex-col justify-center px-6 py-10 md:px-10 md:py-12">
+                                    <p className="inline-flex items-center gap-1.5 text-[12px] font-semibold tracking-wide text-[var(--pg-accent-hover)] uppercase">
+                                        <LayoutGrid
+                                            className="h-3.5 w-3.5"
+                                            aria-hidden="true"
+                                            strokeWidth={2}
+                                        />
+                                        Live demo
                                     </p>
-                                </Link>
-                            );
-                        })}
-                    </div>
-                </section>
+                                    <h2 className="spreadish-section-title mt-2 text-2xl text-[var(--pg-text)] md:text-3xl">
+                                        See it before you wire it
+                                    </h2>
+                                    <p className="mt-3 text-[15px] leading-relaxed text-[var(--pg-muted)]">
+                                        The playground is the same product shell your users will
+                                        recognize: formula bar, format strip, sheet tabs, undo,
+                                        autosave, and a multi-workbook switcher. No sidebars.
+                                        Full-width grid. Commands under the chrome.
+                                    </p>
+                                    <ul className="mt-5 space-y-2 text-[14px] text-[var(--pg-text)]">
+                                        {[
+                                            'Type formulas in the bar and watch cells show computed values',
+                                            'Create and switch workbooks through the header catalog',
+                                            'Click the brand mark anytime to return to this docs story',
+                                        ].map((line) => (
+                                            <li key={line} className="flex gap-2">
+                                                <Check
+                                                    className="mt-0.5 h-4 w-4 shrink-0 text-[var(--pg-accent)]"
+                                                    aria-hidden="true"
+                                                    strokeWidth={2}
+                                                />
+                                                {line}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <div className="mt-8 flex flex-wrap gap-3">
+                                        <Link
+                                            to="/playground"
+                                            className="inline-flex h-11 items-center rounded-[10px] bg-[var(--pg-accent-hover)] px-5 text-[14px] font-semibold text-white hover:bg-[#065f46]"
+                                        >
+                                            Open the playground
+                                        </Link>
+                                        <Link
+                                            to="/docs/playground"
+                                            className="inline-flex h-11 items-center rounded-[10px] border border-[var(--pg-border)] bg-white px-5 text-[14px] font-semibold text-[var(--pg-text)] hover:border-[var(--pg-accent)]"
+                                        >
+                                            How the demo maps to APIs
+                                        </Link>
+                                    </div>
+                                </div>
+                                <div className="border-t border-[var(--pg-border)] bg-[var(--pg-bg)] p-4 lg:border-t-0 lg:border-l">
+                                    <picture>
+                                        <source
+                                            type="image/webp"
+                                            srcSet={`${previewFormula400WebpUrl} 400w, ${previewFormulaWebpUrl} 800w`}
+                                            sizes="(max-width: 768px) 100vw, 480px"
+                                        />
+                                        <source
+                                            type="image/png"
+                                            srcSet={`${previewFormula400Url} 400w, ${previewFormulaUrl} 800w`}
+                                            sizes="(max-width: 768px) 100vw, 480px"
+                                        />
+                                        <img
+                                            src={previewFormulaUrl}
+                                            alt="Spreadish playground with formula bar showing =SUM(1,2,3) and computed cell value"
+                                            width={800}
+                                            height={500}
+                                            className="h-auto w-full rounded-[12px] border border-[var(--pg-border)] bg-white object-cover shadow-[0_4px_16px_rgb(15_23_42_/_8%)]"
+                                            loading="lazy"
+                                            decoding="async"
+                                            draggable={false}
+                                        />
+                                    </picture>
+                                    <p className="mt-3 mb-0 text-center text-[12px] text-[var(--pg-muted)]">
+                                        Real playground chrome captured from the live demo
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="mx-auto max-w-6xl px-4 py-16">
+                        <div className="max-w-2xl">
+                            <h2 className="text-2xl font-bold tracking-tight text-[var(--pg-text)]">
+                                Keep reading
+                            </h2>
+                            <p className="mt-3 text-[15px] leading-relaxed text-[var(--pg-muted)]">
+                                Follow the story from install through architecture, recipes, and the
+                                React host surface. Each guide is written to teach, not to stub.
+                            </p>
+                        </div>
+                        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                            {keepReading.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <Link
+                                        key={item.to}
+                                        to={item.to}
+                                        className="group relative overflow-hidden rounded-[14px] border border-[var(--pg-border)] bg-white p-5 shadow-[0_4px_16px_rgb(15_23_42_/_5%)] transition-all hover:border-[var(--pg-accent)] hover:shadow-[0_12px_28px_rgb(15_23_42_/_10%)]"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <span className="inline-flex items-center gap-2 font-mono text-[12px] font-semibold tracking-wide text-[var(--pg-accent-hover)]">
+                                                <Icon
+                                                    className="h-4 w-4"
+                                                    aria-hidden="true"
+                                                    strokeWidth={2}
+                                                />
+                                                {item.label}
+                                            </span>
+                                            <span
+                                                className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] bg-[var(--pg-accent-soft)] text-[var(--pg-accent-hover)] transition-transform group-hover:translate-x-0.5"
+                                                aria-hidden="true"
+                                            >
+                                                <ArrowRight
+                                                    className="h-3.5 w-3.5"
+                                                    strokeWidth={2}
+                                                />
+                                            </span>
+                                        </div>
+                                        <h3 className="mt-3 text-[16px] font-semibold tracking-tight text-[var(--pg-text)]">
+                                            {item.title}
+                                        </h3>
+                                        <p className="mt-2 text-[14px] leading-relaxed text-[var(--pg-muted)]">
+                                            {item.body}
+                                        </p>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </section>
+                </main>
 
                 <SiteFooter />
             </div>

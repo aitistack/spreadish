@@ -29,6 +29,7 @@ export function InstallTabs({ packages = DEFAULT_PACKAGES }: InstallTabsProps) {
     const [active, setActive] = useState<PackageManager>('bun');
     const [copied, setCopied] = useState(false);
     const command = installCommand(active, packages);
+    const copyLabel = copied ? 'Copied' : 'Copy';
 
     const onCopy = async () => {
         try {
@@ -45,12 +46,8 @@ export function InstallTabs({ packages = DEFAULT_PACKAGES }: InstallTabsProps) {
             className="docs-code-block overflow-hidden rounded-[12px] border border-[var(--pg-border)] bg-[#0f172a] shadow-[0_4px_16px_rgb(15_23_42_/_8%)]"
             data-testid="install-tabs"
         >
-            <div
-                className="flex flex-wrap items-center justify-between gap-2 border-b border-[#334155] px-3 pt-2"
-                role="tablist"
-                aria-label="Package manager"
-            >
-                <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#334155] px-3 pt-2">
+                <div className="flex flex-wrap gap-1" role="tablist" aria-label="Package manager">
                     {MANAGERS.map((manager) => {
                         const selected = manager === active;
                         return (
@@ -79,14 +76,13 @@ export function InstallTabs({ packages = DEFAULT_PACKAGES }: InstallTabsProps) {
                         void onCopy();
                     }}
                     data-testid="code-copy-button"
-                    aria-label={copied ? 'Copied' : 'Copy code'}
                 >
                     {copied ? (
                         <Check className="h-3.5 w-3.5" aria-hidden="true" strokeWidth={2} />
                     ) : (
                         <Copy className="h-3.5 w-3.5" aria-hidden="true" strokeWidth={2} />
                     )}
-                    {copied ? 'Copied' : 'Copy'}
+                    {copyLabel}
                 </button>
             </div>
             <pre className="docs-code-pre m-0 overflow-x-auto px-5 py-4 font-mono text-[13px] leading-relaxed text-[#e2e8f0]">

@@ -5,7 +5,7 @@ import { SPREADISH_AGENT_PROMPT } from '../lib/agent-prompt';
 export type CopyPromptButtonVariant = 'hero' | 'header' | 'menu';
 
 const variantClass: Record<CopyPromptButtonVariant, string> = {
-    hero: 'copy-prompt-button inline-flex h-11 items-center gap-2 rounded-[10px] bg-transparent px-5 text-[14px] font-semibold text-[var(--pg-text)] hover:text-[var(--pg-accent-hover)]',
+    hero: 'copy-prompt-button inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[var(--pg-border)] bg-white px-5 text-[14px] font-semibold text-[var(--pg-text)] shadow-[0_1px_2px_rgb(15_23_42_/_6%)] hover:border-[var(--pg-accent)] hover:text-[var(--pg-accent-hover)] sm:w-auto',
     header: 'copy-prompt-button inline-flex h-9 items-center gap-1.5 rounded-[8px] bg-transparent px-3 text-[13px] font-medium leading-none text-[var(--pg-text)] hover:text-[var(--pg-accent-hover)]',
     menu: 'copy-prompt-button inline-flex w-full items-center gap-2 rounded-[10px] bg-transparent px-3 py-2.5 text-left text-[14px] font-medium text-[var(--pg-text)] hover:text-[var(--pg-accent-hover)]',
 };
@@ -25,6 +25,7 @@ export function CopyPromptButton({
     const statusId = useId();
     const iconSize =
         variant === 'hero' ? 'h-4 w-4' : variant === 'header' ? 'h-3.5 w-3.5' : 'h-3.5 w-3.5';
+    const label = copied ? 'Copied' : 'Copy Prompt';
 
     async function handleCopy() {
         try {
@@ -45,21 +46,18 @@ export function CopyPromptButton({
                 onClick={() => {
                     void handleCopy();
                 }}
-                aria-label={
-                    copied ? 'Agent prompt copied' : 'Copy Spreadish agent prompt to clipboard'
-                }
                 data-testid="copy-prompt-button"
             >
                 {copied ? (
                     <Check
-                        className={`${iconSize} text-[var(--pg-accent)]`}
+                        className={`${iconSize} text-[var(--pg-accent-hover)]`}
                         aria-hidden="true"
                         strokeWidth={2}
                     />
                 ) : (
                     <ClipboardCopy className={iconSize} aria-hidden="true" strokeWidth={2} />
                 )}
-                {copied ? 'Copied' : 'Copy Prompt'}
+                {label}
             </button>
             <span id={statusId} className="sr-only" aria-live="polite">
                 {copied ? 'Spreadish agent prompt copied to clipboard' : ''}

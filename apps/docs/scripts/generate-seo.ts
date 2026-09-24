@@ -419,6 +419,31 @@ function injectHead(html: string, page: SitePage): string {
     return next.replace(/<\/head>/i, `${block}</head>`);
 }
 
+async function findDistAsset(prefix: string, ext: string): Promise<string | null> {
+    const assetsDir = path.join(distDir, 'assets');
+    try {
+        const { readdir } = await import('node:fs/promises');
+        const files = await readdir(assetsDir);
+        const match = files.find((name) => name.startsWith(prefix) && name.endsWith(ext));
+        return match ? `/assets/${match}` : null;
+    } catch {
+        return null;
+    }
+}
+
+function homeSplashHtml(logoWebp: string | null, logoPng: string | null): string {
+    const picture =
+        logoWebp || logoPng
+            ? `<picture>${logoWebp ? `<source srcset="${logoWebp}" type="image/webp" />` : ''}${
+                  logoPng
+                      ? `<img src="${logoPng}" alt="Spreadish" width="240" height="80" fetchpriority="high" decoding="async" style="display:block;height:auto;width:100%;max-width:240px;object-fit:contain;object-position:left" />`
+                      : ''
+              }</picture>`
+            : `<p style="margin:0;font:600 1.25rem/1.2 Urbanist,system-ui,sans-serif;color:#0f172a">Spreadish</p>`;
+
+    return `<div id="root"><div style="min-height:100dvh;background:#eef1f4;color:#0f172a;font-family:Urbanist,system-ui,-apple-system,sans-serif"><main><section style="border-bottom:1px solid #d7dde5"><div style="max-width:72rem;margin:0 auto;padding:5rem 1rem"><div style="margin-bottom:1.25rem">${picture}</div><h1 class="spreadish-hero-title" style="max-width:36rem;margin:0;font:700 1.875rem/1.15 'Chakra Petch',system-ui,-apple-system,sans-serif;letter-spacing:-0.02em;color:#0f172a">Ship a spreadsheet in your React app without owning Excel.</h1></div></section></main></div></div>`;
+}
+
 async function prerender(): Promise<void> {
     const indexPath = path.join(distDir, 'index.html');
     let indexHtml: string;
@@ -431,9 +456,18 @@ async function prerender(): Promise<void> {
         return;
     }
 
+    const logoWebp = await findDistAsset('spreadish-480-', '.webp');
+    const logoPng = await findDistAsset('spreadish-480-', '.png');
+
     for (const page of SITE_PAGES) {
-        const html = injectHead(indexHtml, page);
+        let html = injectHead(indexHtml, page);
         if (page.path === '/') {
+            // Paint LCP (hero title + wordmark) from static HTML before React boots.
+            html = html.replace(/<div id="root"><\/div>/, homeSplashHtml(logoWebp, logoPng));
+            if (logoWebp && !html.includes('rel="preload" as="image"')) {
+                const preload = `<link rel="preload" as="image" href="${logoWebp}" type="image/webp" fetchpriority="high" />`;
+                html = html.replace('</head>', `    ${preload}\n</head>`);
+            }
             await writeFile(indexPath, html);
             continue;
         }

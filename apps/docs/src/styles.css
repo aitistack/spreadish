@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@source '../../playground/src/**/*.{ts,tsx}';
 @source './**/*.{ts,tsx,mdx}';
 
 @font-face {
@@ -18,7 +17,7 @@
     src: url('/fonts/Chakra_Petch/ChakraPetch-Medium-latin.woff2') format('woff2');
     font-weight: 500;
     font-style: normal;
-    font-display: swap;
+    font-display: optional;
     unicode-range:
         U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
         U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -29,7 +28,7 @@
     src: url('/fonts/Chakra_Petch/ChakraPetch-SemiBold-latin.woff2') format('woff2');
     font-weight: 600;
     font-style: normal;
-    font-display: swap;
+    font-display: optional;
     unicode-range:
         U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
         U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -46,56 +45,23 @@
         U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-@font-face {
-    font-family: 'JetBrains Mono';
-    src: url('/fonts/JetBrains_Mono/JetBrainsMono-Regular-latin.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-    unicode-range:
-        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
-        U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-    font-family: 'JetBrains Mono';
-    src: url('/fonts/JetBrains_Mono/JetBrainsMono-Medium-latin.woff2') format('woff2');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-    unicode-range:
-        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
-        U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-    font-family: 'JetBrains Mono';
-    src: url('/fonts/JetBrains_Mono/JetBrainsMono-SemiBold-latin.woff2') format('woff2');
-    font-weight: 600;
-    font-style: normal;
-    font-display: swap;
-    unicode-range:
-        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
-        U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
 :root {
     --pg-accent: #10b981;
-    --pg-accent-hover: #059669;
+    --pg-accent-hover: #047857;
     --pg-accent-soft: #ecfdf5;
     --pg-accent-muted: #d1fae5;
     --pg-bg: #eef1f4;
     --pg-surface: #ffffff;
-    --pg-surface-soft: #f8fafd;
+    --pg-surface-soft: #f8fafc;
     --pg-border: #e5eaf1;
     --pg-border-strong: #d5dbe5;
     --pg-text: #111827;
-    --pg-muted: #6b7280;
+    --pg-muted: #4b5563;
     --pg-radius: 12px;
     --pg-radius-sm: 8px;
     --spreadish-font-display: 'Chakra Petch', system-ui, sans-serif;
     --spreadish-font-body: 'Urbanist', system-ui, sans-serif;
-    --spreadish-font-code: 'JetBrains Mono', ui-monospace, monospace;
+    --spreadish-font-code: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
     --spreadish-tracking-display: -0.04em;
     --spreadish-tracking-tight: -0.025em;
     --spreadish-tracking-label: 0.08em;

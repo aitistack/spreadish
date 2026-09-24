@@ -70,4 +70,40 @@ export default defineConfig({
         host: '127.0.0.1',
         port: 5173,
     },
+    build: {
+        target: 'es2022',
+        cssCodeSplit: true,
+        sourcemap: false,
+        modulePreload: {
+            resolveDependencies: (_filename, deps) =>
+                deps.filter(
+                    (dep) => !dep.includes('PlaygroundPage') && !dep.includes('playground'),
+                ),
+        },
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes('node_modules')) {
+                        if (
+                            id.includes('react-dom') ||
+                            id.includes('/react/') ||
+                            id.includes('\\react\\')
+                        ) {
+                            return 'vendor-react';
+                        }
+                        if (id.includes('react-router')) {
+                            return 'vendor-router';
+                        }
+                        if (id.includes('lucide-react')) {
+                            return 'vendor-icons';
+                        }
+                    }
+                    if (id.includes('search-index.generated')) {
+                        return 'search-index';
+                    }
+                    return undefined;
+                },
+            },
+        },
+    },
 });

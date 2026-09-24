@@ -1,7 +1,8 @@
 import { BookOpen, LayoutGrid, Menu, Map, Star, X } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import brandIconUrl from '../assets/icon.png';
+import brandIconUrl from '../assets/optimized/icon-56.png';
+import brandIconWebpUrl from '../assets/optimized/icon-56.webp';
 import { CommandPaletteTrigger } from './CommandPalette';
 import { CopyPromptButton } from './CopyPromptButton';
 import { GithubIcon } from './icons';
@@ -96,15 +97,22 @@ export function SiteHeader() {
             data-scrolled={scrolled ? 'true' : 'false'}
         >
             <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
-                <NavLink to="/" className="mr-2 flex shrink-0 items-center gap-2.5 sm:mr-3">
-                    <img
-                        src={brandIconUrl}
-                        alt=""
-                        width={28}
-                        height={28}
-                        className="h-7 w-7 object-contain"
-                        draggable={false}
-                    />
+                <NavLink
+                    to="/"
+                    aria-label="Spreadish home"
+                    className="mr-2 flex shrink-0 items-center gap-2.5 sm:mr-3"
+                >
+                    <picture>
+                        <source srcSet={brandIconWebpUrl} type="image/webp" />
+                        <img
+                            src={brandIconUrl}
+                            alt=""
+                            width={28}
+                            height={28}
+                            className="h-7 w-7 object-contain"
+                            draggable={false}
+                        />
+                    </picture>
                 </NavLink>
 
                 <div className="hidden min-w-0 flex-1 items-center gap-4 sm:flex">

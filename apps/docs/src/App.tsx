@@ -1,35 +1,48 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { CommandPaletteProvider } from './components/CommandPalette';
-import { DocsLayout } from './components/DocsLayout';
-import { LegalLayout } from './components/LegalLayout';
 import { PageMeta } from './components/PageMeta';
 import { ScrollToTop } from './components/ScrollToTop';
 import { HomePage } from './pages/HomePage';
-import { PlaygroundPage } from './pages/PlaygroundPage';
-import GettingStarted from './content/getting-started.mdx';
-import Architecture from './content/architecture.mdx';
-import CoreModel from './content/core-model.mdx';
-import ReactDoc from './content/react.mdx';
-import Formulas from './content/formulas.mdx';
-import Persistence from './content/persistence.mdx';
-import ImportExport from './content/import-export.mdx';
-import Recipes from './content/recipes.mdx';
-import PlaygroundDoc from './content/playground.mdx';
-import Contributing from './content/contributing.mdx';
-import Roadmap from './content/roadmap.mdx';
-import WhySpreadish from './content/why-spreadish.mdx';
-import ApiCore from './content/api-core.mdx';
-import ApiReact from './content/api-react.mdx';
-import ApiSometic from './content/api-sometic.mdx';
-import ApiFormulaEngine from './content/api-formula-engine.mdx';
-import ApiUtils from './content/api-utils.mdx';
-import LegalIndex from './content/legal/index.mdx';
-import LegalPrivacy from './content/legal/privacy.mdx';
-import LegalTerms from './content/legal/terms.mdx';
-import LegalSecurity from './content/legal/security.mdx';
-import LegalLicense from './content/legal/license.mdx';
+
+const PlaygroundPage = lazy(async () => {
+    const module = await import('./pages/PlaygroundPage');
+    return { default: module.PlaygroundPage };
+});
+
+const DocsLayout = lazy(async () => {
+    const module = await import('./components/DocsLayout');
+    return { default: module.DocsLayout };
+});
+
+const LegalLayout = lazy(async () => {
+    const module = await import('./components/LegalLayout');
+    return { default: module.LegalLayout };
+});
+
+const GettingStarted = lazy(async () => import('./content/getting-started.mdx'));
+const Architecture = lazy(async () => import('./content/architecture.mdx'));
+const CoreModel = lazy(async () => import('./content/core-model.mdx'));
+const ReactDoc = lazy(async () => import('./content/react.mdx'));
+const Formulas = lazy(async () => import('./content/formulas.mdx'));
+const Persistence = lazy(async () => import('./content/persistence.mdx'));
+const ImportExport = lazy(async () => import('./content/import-export.mdx'));
+const Recipes = lazy(async () => import('./content/recipes.mdx'));
+const PlaygroundDoc = lazy(async () => import('./content/playground.mdx'));
+const Contributing = lazy(async () => import('./content/contributing.mdx'));
+const Roadmap = lazy(async () => import('./content/roadmap.mdx'));
+const WhySpreadish = lazy(async () => import('./content/why-spreadish.mdx'));
+const ApiCore = lazy(async () => import('./content/api-core.mdx'));
+const ApiReact = lazy(async () => import('./content/api-react.mdx'));
+const ApiSometic = lazy(async () => import('./content/api-sometic.mdx'));
+const ApiFormulaEngine = lazy(async () => import('./content/api-formula-engine.mdx'));
+const ApiUtils = lazy(async () => import('./content/api-utils.mdx'));
+const LegalIndex = lazy(async () => import('./content/legal/index.mdx'));
+const LegalPrivacy = lazy(async () => import('./content/legal/privacy.mdx'));
+const LegalTerms = lazy(async () => import('./content/legal/terms.mdx'));
+const LegalSecurity = lazy(async () => import('./content/legal/security.mdx'));
+const LegalLicense = lazy(async () => import('./content/legal/license.mdx'));
 
 function DocsScrollLock() {
     useEffect(() => {
@@ -39,6 +52,22 @@ function DocsScrollLock() {
         };
     }, []);
     return null;
+}
+
+function RouteFallback() {
+    return (
+        <div
+            className="flex min-h-[40vh] items-center justify-center bg-[var(--pg-bg)] text-[14px] text-[var(--pg-muted)]"
+            role="status"
+            aria-live="polite"
+        >
+            Loading…
+        </div>
+    );
+}
+
+function LazyRoute({ children }: { readonly children: ReactNode }) {
+    return <Suspense fallback={<RouteFallback />}>{children}</Suspense>;
 }
 
 export function App() {
@@ -51,8 +80,22 @@ export function App() {
                     <PageMeta />
                     <Routes>
                         <Route path="/" element={<HomePage />} />
-                        <Route path="/playground" element={<PlaygroundPage />} />
-                        <Route path="/docs" element={<DocsLayout />}>
+                        <Route
+                            path="/playground"
+                            element={
+                                <LazyRoute>
+                                    <PlaygroundPage />
+                                </LazyRoute>
+                            }
+                        />
+                        <Route
+                            path="/docs"
+                            element={
+                                <LazyRoute>
+                                    <DocsLayout />
+                                </LazyRoute>
+                            }
+                        >
                             <Route index element={<Navigate to="getting-started" replace />} />
                             <Route path="why-spreadish" element={<WhySpreadish />} />
                             <Route path="getting-started" element={<GettingStarted />} />
@@ -72,7 +115,14 @@ export function App() {
                             <Route path="api/formula-engine" element={<ApiFormulaEngine />} />
                             <Route path="api/utils" element={<ApiUtils />} />
                         </Route>
-                        <Route path="/legal" element={<LegalLayout />}>
+                        <Route
+                            path="/legal"
+                            element={
+                                <LazyRoute>
+                                    <LegalLayout />
+                                </LazyRoute>
+                            }
+                        >
                             <Route index element={<LegalIndex />} />
                             <Route path="privacy" element={<LegalPrivacy />} />
                             <Route path="terms" element={<LegalTerms />} />

@@ -1,6 +1,7 @@
 import { BookMarked, Package, Scale, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import brandIconUrl from '../assets/icon.png';
+import brandIconUrl from '../assets/optimized/icon-56.png';
+import brandIconWebpUrl from '../assets/optimized/icon-56.webp';
 import { GithubIcon } from './icons';
 
 const guideLinks = [
@@ -37,14 +38,17 @@ export function SiteFooter() {
                 <div className="grid gap-10 md:grid-cols-[1.3fr_1fr_1fr_1fr_1fr]">
                     <div>
                         <Link to="/" className="inline-flex items-center gap-2.5">
-                            <img
-                                src={brandIconUrl}
-                                alt=""
-                                width={28}
-                                height={28}
-                                className="h-7 w-7 object-contain"
-                                draggable={false}
-                            />
+                            <picture>
+                                <source srcSet={brandIconWebpUrl} type="image/webp" />
+                                <img
+                                    src={brandIconUrl}
+                                    alt=""
+                                    width={28}
+                                    height={28}
+                                    className="h-7 w-7 object-contain"
+                                    draggable={false}
+                                />
+                            </picture>
                             <span className="text-[15px] font-semibold tracking-tight text-[var(--pg-text)]">
                                 Spreadish
                             </span>

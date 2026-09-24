@@ -11,11 +11,7 @@ import {
     type ReactNode,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    SEARCH_INDEX,
-    type SearchGroup,
-    type SearchIndexEntry,
-} from '../lib/search-index.generated';
+import type { SearchGroup, SearchIndexEntry } from '../lib/search-index.generated';
 
 const GROUP_ORDER: readonly SearchGroup[] = ['Guide', 'API', 'Legal', 'Product'];
 
@@ -172,7 +168,6 @@ export function CommandPaletteTrigger({ className = '' }: { className?: string }
             type="button"
             className={`inline-flex h-9 min-w-[12rem] flex-1 items-center gap-2 rounded-[8px] border border-[var(--pg-border)] bg-white px-3 text-[13px] font-medium text-[var(--pg-muted)] shadow-[0_1px_1px_rgb(15_23_42_/_4%)] hover:border-[var(--pg-accent)] hover:text-[var(--pg-text)] sm:max-w-md sm:flex-none sm:min-w-[16rem] md:min-w-[18rem] ${className}`}
             data-testid="command-palette-trigger"
-            aria-label="Search docs"
             onClick={openPalette}
         >
             <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" strokeWidth={2} />
@@ -188,6 +183,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [active, setActive] = useState(0);
+    const [searchIndex, setSearchIndex] = useState<readonly SearchIndexEntry[] | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const listId = useId();
     const navigate = useNavigate();
@@ -204,6 +200,21 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
         setQuery('');
         setActive(0);
     }, []);
+
+    useEffect(() => {
+        if (!open || searchIndex !== null) {
+            return;
+        }
+        let cancelled = false;
+        void import('../lib/search-index.generated').then((module) => {
+            if (!cancelled) {
+                setSearchIndex(module.SEARCH_INDEX);
+            }
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [open, searchIndex]);
 
     useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
@@ -243,8 +254,11 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
     const tokens = useMemo(() => tokenize(query.trim()), [query]);
 
     const hits = useMemo(() => {
+        if (!searchIndex) {
+            return [] as PaletteHit[];
+        }
         const scored: PaletteHit[] = [];
-        for (const entry of SEARCH_INDEX) {
+        for (const entry of searchIndex) {
             const score = scoreEntry(entry, tokens);
             if (score > 0) {
                 scored.push({ entry, score });
@@ -257,7 +271,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
                 a.entry.heading.localeCompare(b.entry.heading),
         );
         return scored.slice(0, 60);
-    }, [tokens]);
+    }, [searchIndex, tokens]);
 
     const flat = hits;
 
@@ -356,7 +370,11 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
                             className="max-h-[min(56vh,440px)] overflow-y-auto p-2"
                             data-testid="command-palette-results"
                         >
-                            {flat.length === 0 ? (
+                            {searchIndex === null ? (
+                                <p className="px-3 py-6 text-center text-[13px] text-[var(--pg-muted)]">
+                                    Loading search…
+                                </p>
+                            ) : flat.length === 0 ? (
                                 <p className="px-3 py-6 text-center text-[13px] text-[var(--pg-muted)]">
                                     No results for “{query}”
                                 </p>

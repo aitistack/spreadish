@@ -118,10 +118,10 @@ export function PopoverMenu({
     }
 
     const panelClass = anchored
-        ? 'fixed z-[900] min-w-[152px] rounded-[10px] border border-[#e5eaf1] bg-white py-0.5 shadow-[0_8px_24px_rgb(15_23_42_/_12%)]'
+        ? 'fixed z-[900] min-w-[152px] rounded-[10px] border border-[var(--pg-border)] bg-[var(--pg-surface)] py-0.5 shadow-[0_8px_24px_rgb(15_23_42_/_12%)]'
         : floating
-          ? 'min-w-[152px] rounded-[10px] border border-[#e5eaf1] bg-white py-0.5 shadow-[0_8px_24px_rgb(15_23_42_/_12%)]'
-          : `absolute top-full z-50 mt-1 min-w-[152px] rounded-[10px] border border-[#e5eaf1] bg-white py-0.5 shadow-[0_8px_24px_rgb(15_23_42_/_12%)] ${
+          ? 'min-w-[152px] rounded-[10px] border border-[var(--pg-border)] bg-[var(--pg-surface)] py-0.5 shadow-[0_8px_24px_rgb(15_23_42_/_12%)]'
+          : `absolute top-full z-50 mt-1 min-w-[152px] rounded-[10px] border border-[var(--pg-border)] bg-[var(--pg-surface)] py-0.5 shadow-[0_8px_24px_rgb(15_23_42_/_12%)] ${
                 align === 'end' ? 'right-0' : 'left-0'
             }`;
 
@@ -152,8 +152,8 @@ export function PopoverMenu({
                     disabled={item.disabled}
                     className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[12px] leading-tight whitespace-nowrap ${
                         item.danger
-                            ? 'text-[#dc2626] hover:bg-[#fef2f2]'
-                            : 'text-[#374151] hover:bg-[#f9fafb]'
+                            ? 'text-[#dc2626] hover:bg-[rgb(220_38_38_/_12%)]'
+                            : 'text-[var(--pg-text)] hover:bg-[var(--pg-surface-soft)]'
                     } disabled:cursor-not-allowed disabled:opacity-45`}
                     onClick={() => {
                         if (item.disabled) {

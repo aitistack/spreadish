@@ -1,25 +1,88 @@
-:root {
+/* Light defaults — hosts can override any --se-grid-* token. */
+.seGrid {
     --se-grid-bg: #ffffff;
     --se-grid-border: #e5e7eb;
     --se-grid-header-bg: #f3f4f6;
     --se-grid-header-active-bg: #ecfdf5;
     --se-grid-header-fg: #6b7280;
     --se-grid-header-active-fg: #059669;
-    --se-grid-selection: rgb(167 243 208 / 70%);
+    --se-grid-selection: rgb(16 185 129 / 28%);
     --se-grid-active: #10b981;
     --se-grid-cut: #059669;
     --se-grid-cell-fg: #111827;
     --se-grid-cell-error: #b91c1c;
+    --se-grid-editor-bg: #ffffff;
+    --se-grid-fill-preview: rgb(16 185 129 / 12%);
     --se-grid-font: 13px;
-}
+    color-scheme: light;
 
-.seGrid {
     position: relative;
     height: 100%;
     min-height: 0;
     overflow: auto;
     background: var(--se-grid-bg);
     outline: none;
+}
+
+/*
+ * Dark mode resolution (most specific wins):
+ * 1. prefers-color-scheme when neither host nor grid forces light
+ * 2. host [data-theme="dark"] / .seGrid[data-theme="dark"]
+ * 3. host [data-theme="light"] / .seGrid[data-theme="light"] overrides system dark
+ */
+@media (prefers-color-scheme: dark) {
+    .seGrid:not([data-theme='light']) {
+        --se-grid-bg: #0b1220;
+        --se-grid-border: #2a3648;
+        --se-grid-header-bg: #141c2b;
+        --se-grid-header-active-bg: #0f2f24;
+        --se-grid-header-fg: #94a3b8;
+        --se-grid-header-active-fg: #34d399;
+        --se-grid-selection: rgb(52 211 153 / 28%);
+        --se-grid-active: #34d399;
+        --se-grid-cut: #10b981;
+        --se-grid-cell-fg: #e2e8f0;
+        --se-grid-cell-error: #f87171;
+        --se-grid-editor-bg: #141c2b;
+        --se-grid-fill-preview: rgb(52 211 153 / 16%);
+        color-scheme: dark;
+    }
+}
+
+[data-theme='dark'] .seGrid:not([data-theme='light']),
+.seGrid[data-theme='dark'] {
+    --se-grid-bg: #0b1220;
+    --se-grid-border: #2a3648;
+    --se-grid-header-bg: #141c2b;
+    --se-grid-header-active-bg: #0f2f24;
+    --se-grid-header-fg: #94a3b8;
+    --se-grid-header-active-fg: #34d399;
+    --se-grid-selection: rgb(52 211 153 / 28%);
+    --se-grid-active: #34d399;
+    --se-grid-cut: #10b981;
+    --se-grid-cell-fg: #e2e8f0;
+    --se-grid-cell-error: #f87171;
+    --se-grid-editor-bg: #141c2b;
+    --se-grid-fill-preview: rgb(52 211 153 / 16%);
+    color-scheme: dark;
+}
+
+[data-theme='light'] .seGrid:not([data-theme='dark']),
+.seGrid[data-theme='light'] {
+    --se-grid-bg: #ffffff;
+    --se-grid-border: #e5e7eb;
+    --se-grid-header-bg: #f3f4f6;
+    --se-grid-header-active-bg: #ecfdf5;
+    --se-grid-header-fg: #6b7280;
+    --se-grid-header-active-fg: #059669;
+    --se-grid-selection: rgb(16 185 129 / 28%);
+    --se-grid-active: #10b981;
+    --se-grid-cut: #059669;
+    --se-grid-cell-fg: #111827;
+    --se-grid-cell-error: #b91c1c;
+    --se-grid-editor-bg: #ffffff;
+    --se-grid-fill-preview: rgb(16 185 129 / 12%);
+    color-scheme: light;
 }
 
 .seGridCanvas {
@@ -102,7 +165,7 @@
 }
 
 .seGridCell[data-fill-preview='true'] {
-    background: linear-gradient(rgb(16 185 129 / 12%), rgb(16 185 129 / 12%))
+    background: linear-gradient(var(--se-grid-fill-preview), var(--se-grid-fill-preview))
         var(--se-cell-fill, var(--se-grid-bg));
 }
 
@@ -142,7 +205,9 @@
     height: 100%;
     border: 0;
     padding: 0 8px;
-    background: #fff;
+    background: var(--se-grid-editor-bg);
+    color: var(--se-grid-cell-fg);
     font-size: var(--se-grid-font);
     outline: 2px solid var(--se-grid-active);
+    color-scheme: inherit;
 }

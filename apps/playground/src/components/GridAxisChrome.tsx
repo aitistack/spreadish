@@ -339,7 +339,7 @@ export function GridAxisChrome({
                     <>
                         <button
                             type="button"
-                            className="rounded-[8px] border border-[#e5e7eb] bg-white px-3 py-1.5 text-[13px] font-medium text-[#374151] hover:bg-[#f9fafb]"
+                            className="rounded-[8px] border border-[var(--pg-border)] bg-[var(--pg-surface)] px-3 py-1.5 text-[13px] font-medium text-[var(--pg-text)] hover:bg-[var(--pg-surface-soft)]"
                             onClick={() => setMenu({ kind: 'none' })}
                         >
                             Cancel
@@ -417,9 +417,11 @@ function AxisHeader({
         <div
             ref={setDropRef}
             role={resizeEdge === 'bottom' ? 'rowheader' : 'columnheader'}
-            className={`relative box-border flex items-center justify-center border-r border-b border-[#e5e7eb] text-[11px] font-medium ${
-                active ? 'bg-[#ecfdf5] text-[#059669]' : 'bg-[#f3f4f6] text-[#6b7280]'
-            } ${hidden ? 'opacity-40' : ''} ${isOver ? 'ring-2 ring-inset ring-[#10b981]' : ''} ${
+            className={`relative box-border flex items-center justify-center border-r border-b border-[color:var(--se-grid-border,#e5e7eb)] text-[11px] font-medium ${
+                active
+                    ? 'bg-[var(--se-grid-header-active-bg,#ecfdf5)] text-[var(--se-grid-header-active-fg,#059669)]'
+                    : 'bg-[var(--se-grid-header-bg,#f3f4f6)] text-[var(--se-grid-header-fg,#6b7280)]'
+            } ${hidden ? 'opacity-40' : ''} ${isOver ? 'ring-2 ring-inset ring-[var(--se-grid-active,#10b981)]' : ''} ${
                 isDragging ? 'opacity-70' : ''
             }`}
             style={{

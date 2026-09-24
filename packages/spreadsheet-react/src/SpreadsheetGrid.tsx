@@ -32,6 +32,8 @@ export const DEFAULT_COLUMN_WIDTH = 100;
 export const DEFAULT_ROW_HEADER_WIDTH = 48;
 export const DEFAULT_COLUMN_HEADER_HEIGHT = 28;
 
+export type SpreadsheetTheme = 'light' | 'dark' | 'system';
+
 export type SpreadsheetGridProps = {
     workbook: Workbook;
     sheetId: SheetId | null;
@@ -49,6 +51,12 @@ export type SpreadsheetGridProps = {
     hiddenColumns?: ReadonlySet<number>;
     /** Bump when row/column sizes change so virtualizers remeasure. */
     layoutVersion?: number;
+    /**
+     * Visual theme for cells, headers, and grid borders.
+     * - `light` / `dark`: force that palette on the grid
+     * - `system` (default): follow the nearest host `[data-theme]` / `prefers-color-scheme`
+     */
+    theme?: SpreadsheetTheme;
     onSelect: (
         row: number,
         column: number,
@@ -106,6 +114,7 @@ export function SpreadsheetGrid({
     hiddenRows,
     hiddenColumns,
     layoutVersion = 0,
+    theme = 'system',
     onSelect,
     onDraftChange,
     onCommit,
@@ -312,6 +321,7 @@ export function SpreadsheetGrid({
             tabIndex={0}
             className={['seGrid', className].filter(Boolean).join(' ')}
             data-testid="spreadsheet-grid"
+            data-theme={theme === 'system' ? undefined : theme}
             data-selection-mode={selection?.mode ?? undefined}
             data-selection-start-row={primaryRange ? String(primaryRange.startRow) : undefined}
             data-selection-start-column={

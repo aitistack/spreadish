@@ -19,6 +19,7 @@ export {
     DEFAULT_ROW_HEADER_WIDTH,
     DEFAULT_COLUMN_HEADER_HEIGHT,
     type SpreadsheetGridProps,
+    type SpreadsheetTheme,
 } from './SpreadsheetGrid';
 export { useSpreadsheetKeyboard, type SpreadsheetKeyboardOptions } from './useSpreadsheetKeyboard';
 export {

@@ -5,6 +5,7 @@ import {
     DEFAULT_ROW_COUNT,
     DEFAULT_ROW_HEIGHT,
     SpreadsheetGrid as EngineSpreadsheetGrid,
+    type SpreadsheetTheme,
 } from '@spreadish/react';
 import type { ClipboardPayload, EditorState, Selection, SheetId, Workbook } from '@spreadish/core';
 import { GridAxisChrome } from './GridAxisChrome';
@@ -19,6 +20,7 @@ type SpreadsheetGridProps = {
     editor: EditorState;
     clipboard: ClipboardPayload | null;
     draft: string;
+    theme?: SpreadsheetTheme;
     onSelect: (
         row: number,
         column: number,
@@ -51,6 +53,7 @@ export function SpreadsheetGrid({
     editor,
     clipboard,
     draft,
+    theme = 'system',
     onSelect,
     onDraftChange,
     onCommit,
@@ -151,6 +154,7 @@ export function SpreadsheetGrid({
                     editor={editor}
                     clipboard={clipboard}
                     draft={draft}
+                    theme={theme}
                     rowCount={GRID_VISIBLE_ROWS}
                     columnCount={GRID_VISIBLE_COLS}
                     getRowHeight={getRowHeight}

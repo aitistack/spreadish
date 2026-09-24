@@ -794,14 +794,41 @@ test.describe('Pre-release stubs and full-width layout', () => {
         await expect(page.getByTestId('format-automation')).toHaveCount(0);
     });
 
-    test('theme toggle flips data-theme', async ({ page }) => {
+    test('theme toggle flips data-theme and darkens the grid palette', async ({ page }) => {
         await page.goto('/playground');
         const root = page.getByTestId('playground-root');
+        const grid = page.getByTestId('spreadsheet-grid');
         await expect(root).toHaveAttribute('data-theme', 'light');
+        await expect(grid).toHaveAttribute('data-theme', 'light');
+
+        const lightBorder = await grid.evaluate((el) =>
+            getComputedStyle(el).getPropertyValue('--se-grid-border').trim(),
+        );
+        const lightBg = await grid.evaluate((el) =>
+            getComputedStyle(el).getPropertyValue('--se-grid-bg').trim(),
+        );
+        expect(lightBg.toLowerCase()).toBe('#ffffff');
+
         await page.getByTestId('theme-toggle').click();
         await expect(root).toHaveAttribute('data-theme', 'dark');
+        await expect(grid).toHaveAttribute('data-theme', 'dark');
+
+        const darkBorder = await grid.evaluate((el) =>
+            getComputedStyle(el).getPropertyValue('--se-grid-border').trim(),
+        );
+        const darkBg = await grid.evaluate((el) =>
+            getComputedStyle(el).getPropertyValue('--se-grid-bg').trim(),
+        );
+        const darkFg = await grid.evaluate((el) =>
+            getComputedStyle(el).getPropertyValue('--se-grid-cell-fg').trim(),
+        );
+        expect(darkBg.toLowerCase()).not.toBe(lightBg.toLowerCase());
+        expect(darkBorder.toLowerCase()).not.toBe(lightBorder.toLowerCase());
+        expect(darkFg.toLowerCase()).toBe('#e2e8f0');
+
         await page.getByTestId('theme-toggle').click();
         await expect(root).toHaveAttribute('data-theme', 'light');
+        await expect(grid).toHaveAttribute('data-theme', 'light');
     });
 
     test('zoom defaults to 100% and slider updates label', async ({ page }) => {

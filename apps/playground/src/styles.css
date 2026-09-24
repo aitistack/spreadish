@@ -33,6 +33,11 @@
     --pg-border-strong: #475569;
     --pg-text: #e2e8f0;
     --pg-muted: #94a3b8;
+    color-scheme: dark;
+}
+
+[data-theme='light'] {
+    color-scheme: light;
 }
 
 *,
@@ -113,6 +118,10 @@ select {
     scrollbar-color: #c4c9d1 transparent;
 }
 
+[data-theme='dark'] .pg-scrollbar {
+    scrollbar-color: #475569 transparent;
+}
+
 .pg-scrollbar::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -123,6 +132,10 @@ select {
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: content-box;
+}
+
+[data-theme='dark'] .pg-scrollbar::-webkit-scrollbar-thumb {
+    background: #475569;
 }
 
 .pg-scrollbar::-webkit-scrollbar-track {
@@ -154,8 +167,8 @@ select {
     clip: auto;
     white-space: normal;
     border-radius: 0.5rem;
-    background: #ffffff;
-    color: #059669;
+    background: var(--pg-surface);
+    color: var(--pg-accent-hover);
     font-size: 13px;
     font-weight: 600;
     box-shadow: 0 4px 16px rgb(15 23 42 / 12%);

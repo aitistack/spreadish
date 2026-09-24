@@ -44,6 +44,12 @@ export function App({ brandHomeHref }: { brandHomeHref?: string } = {}) {
         } catch {
             // Ignore quota / private-mode failures.
         }
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+        return () => {
+            delete document.documentElement.dataset.theme;
+            document.documentElement.style.colorScheme = '';
+        };
     }, [theme]);
 
     useEffect(() => {
@@ -186,6 +192,7 @@ export function App({ brandHomeHref }: { brandHomeHref?: string } = {}) {
                             editor={api.editor}
                             clipboard={api.clipboard}
                             draft={api.draft}
+                            theme={theme}
                             onSelect={api.selectCell}
                             onDraftChange={(value) => api.setDraft(value, 'cell')}
                             onCommit={api.commitDraft}

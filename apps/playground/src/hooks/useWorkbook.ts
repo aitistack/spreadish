@@ -31,7 +31,7 @@ import { downloadTextFile } from '../file-io';
 export type EditSurface = 'cell' | 'formula' | null;
 
 const EMPTY_STYLE: CellStyle = {};
-const DEFAULT_BORDER_STROKE = '#111827';
+const DEFAULT_BORDER_STROKE = 'var(--se-grid-cell-fg, #111827)';
 
 function thinBorder(color?: string): { readonly style: 'thin'; readonly color: string } {
     return { style: 'thin', color: color ?? DEFAULT_BORDER_STROKE };

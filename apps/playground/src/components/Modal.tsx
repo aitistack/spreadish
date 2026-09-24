@@ -97,17 +97,20 @@ export function Modal({
                     minWidth: caps.minWidth,
                 }}
                 className={cx(
-                    'flex w-fit max-w-full flex-col overflow-hidden rounded-[14px] border border-[#e5eaf1] bg-white shadow-[0_16px_48px_rgb(15_23_42_/_18%)] outline-none',
+                    'flex w-fit max-w-full flex-col overflow-hidden rounded-[14px] border border-[var(--pg-border)] bg-[var(--pg-surface)] shadow-[0_16px_48px_rgb(15_23_42_/_18%)] outline-none',
                     className,
                 )}
             >
                 <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#eef0f3] px-4 py-3">
-                    <h2 id={titleId} className="truncate text-[15px] font-semibold text-[#111827]">
+                    <h2
+                        id={titleId}
+                        className="truncate text-[15px] font-semibold text-[var(--pg-text)]"
+                    >
                         {title}
                     </h2>
                     <button
                         type="button"
-                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827]"
+                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[var(--pg-muted)] hover:bg-[var(--pg-surface-soft)] hover:text-[var(--pg-text)]"
                         aria-label="Close"
                         onClick={onClose}
                     >

@@ -1,7 +1,7 @@
 import type { BorderEdge, BorderLineStyle, CellStyle } from '@spreadish/core';
 import type { CSSProperties } from 'react';
 
-export const DEFAULT_BORDER_COLOR = '#111827';
+export const DEFAULT_BORDER_COLOR = 'var(--se-grid-cell-fg, #111827)';
 
 /** CSS custom property carrying the resolved fill so selection can layer over it. */
 export const FILL_VARIABLE = '--se-cell-fill';

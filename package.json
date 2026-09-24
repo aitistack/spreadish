@@ -36,7 +36,7 @@
         "changeset": "changeset"
     },
     "devDependencies": {
-        "@changesets/cli": "^2.29.7",
+        "@changesets/cli": "^3.0.3",
         "@eslint/js": "^9.36.0",
         "@mdx-js/react": "^3.1.1",
         "@mdx-js/rollup": "^3.1.1",

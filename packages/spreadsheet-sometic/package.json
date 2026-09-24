@@ -1,6 +1,6 @@
 {
     "name": "@spreadish/sometic",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "description": "Official Sometic persistence and multi-workbook workspace adapters for Spreadish.",
     "license": "MIT",
     "author": "Spreadish contributors",

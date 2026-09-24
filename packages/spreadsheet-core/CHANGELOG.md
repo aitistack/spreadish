@@ -1,5 +1,12 @@
 # @spreadish/core
 
+## 0.2.0
+
+### Patch Changes
+
+- @spreadish/utils@0.2.0
+- @spreadish/formula-engine@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

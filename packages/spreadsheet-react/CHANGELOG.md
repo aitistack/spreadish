@@ -1,5 +1,15 @@
 # @spreadish/react
 
+## 0.2.0
+
+### Minor Changes
+
+- 734947b: Add light/dark/system theming for SpreadsheetGrid cells, headers, and borders via CSS tokens and an optional `theme` prop that follows host `data-theme` / `prefers-color-scheme`.
+
+### Patch Changes
+
+- @spreadish/core@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

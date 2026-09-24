@@ -1,5 +1,11 @@
 # @spreadish/sometic
 
+## 0.2.0
+
+### Patch Changes
+
+- @spreadish/core@0.2.0
+
 ## 0.1.0
 
 ### Minor Changes

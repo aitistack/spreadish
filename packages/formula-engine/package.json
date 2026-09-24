@@ -1,6 +1,6 @@
 {
     "name": "@spreadish/formula-engine",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "description": "Lexer, parser, AST, and evaluator for Spreadish formulas (no eval).",
     "license": "MIT",
     "author": "Spreadish contributors",
